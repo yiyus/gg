@@ -1,0 +1,97 @@
+#!/usr/local/bin/dyalogscript MAXWS=16G
+
+⍝ grain growth cellular automata model jgl@dyalog.com 2023
+
+config←'gg.json'
+
+:Namespace EBSD                                                      ⍝ Read and write ang files
+    ⎕IO←0
+    Read←{                                                           ⍝ read ang file
+        (h l)←((2-'#'=⊃¨)⊆⊢)⊃⎕NGET⍵1                                 ⍝   get (hash) comments and data
+        h,⍥⊂⎕CSV⍠2⊢('(^\s+)|(\s+$)' '\s+'⎕R'' ','⊢l)'N'2 0           ⍝   format data and read as csv
+    }
+    Crop←{x y←⍺ ⋄ s←((x>4∘⊃)∧y>3∘⊃)⍵ ⋄ s∘/¨⍵}                        ⍝ crop to given size
+    Write←{⍵⊣⍵1⎕NPUT⍨{⍺,⍵⎕CSV⍠2⍠'Separator' ' '⊢'' 'N'}/⍺}           ⍝ write comments and data to ang file
+    Orientations←{                                                   ⍝ get orientations
+        ⍺←0 ⋄ nx←⌊0.5+1+(⌈/x)÷⌈/|2-/x←4⊃⍵ ⋄ ny←⌊0.5+(≢x)÷nx          ⍝   find size
+        g←∪ea←(a←○⍺÷180)(⌊0.5+÷⍨)⍣(⍺>0)↓⍉↑3↑⍵                        ⍝   unique euler angles
+        (a×⍣(⍺>0)⊢g)(nx ny⍴g⍳ea)                                     ⍝   return angles and indices
+    }
+    IQ←5∘⊃ ⋄ CI←6∘⊃                                                  ⍝ image quality and confidence index
+:EndNamespace
+
+:Namespace Euler                                                     ⍝ Orientations and misorientations
+    ⎕IO←0
+    c←↑(0 1 2 3)(1 0 3 2)(2 3 0 1)(3 2 1 0)                          ⍝ product components ⎕IO=0
+    u←↑(1 ¯1 ¯1 ¯1)(1 1 1 ¯1)(1 ¯1 1 1)(1 1 ¯1 1)                    ⍝ product unit factors
+    QP←+/u×⊣(×⍤1)(⊂c)⌷⊢ ⋄ QC←×∘(1,-3⍴1) ⋄ QD←+.×∘QC                  ⍝ product, conjugate and dot product
+                                                                     ⍝ quaternion from Euler angles
+    RD←180÷⍨○ ⋄ UV←×∘(÷(÷2)*⍨+.×⍨)⍨ ⋄ (x y z)←=∘⊂⍨⍳3                 ⍝   degrees, unitary vector and unit vectors
+    QA←((⊂2○⊢),(⊂1○⊢)∘.×∘UV{⍺←z ⋄ ⍺})∘(÷∘2) ⋄ QAD←QA∘RD              ⍝   quaternion from axis-angle
+    QE←⊃{⍺←z x z ⋄ ⍺}QP.QA⊢ ⋄ QED←QE∘RD                              ⍝   quaternion from Euler angles (zxz)
+                                                                     ⍝ cubic symmetry
+    cs ← ⊂1 0 0 0                                                    ⍝   identity
+    cs,←,(1 0 0)(0 1 0)(0 0 1)∘.QAD 90 180 270                       ⍝   4-fold around <001>
+    cs,←,(1 1 1)(¯1 1 1)(1 ¯1 1)(1 1 ¯1)∘.QAD 120 240                ⍝   3-fold around <111>
+    cs,←,(1 1 0)(1 0 1)(0 1 1)(1 ¯1 0)(¯1 0 1)(0 1 ¯1)∘.QAD 180      ⍝   2-fold around <110>
+    MC←⊃2×¯2○1⌊cs⌈.(|QD)∘⊂QP∘QC ⋄ ML←⌊○⍤⊣÷⍨180×⊢                     ⍝ misorientation (cubic symmetry) and level
+    M←{⍺←0.5                                                         ⍝ namespace to calculate misorientations
+        IM←⌈(⊢+2÷⍨⊣×1-⍨⊣)⌊ ⋄ CM←{(c←⎕NS⍬).m←¯1⍴⍨1+⍵IM.-1 2 ⋄ c}      ⍝ index and cache of misorientations
+        _M_ ← {(c s)←⍺⍺ ⍵⍵                                           ⍝ memoization
+            (a w)←(⊂,d←⍺≠⍵)/∘,¨⍺ ⍵ ⋄ 0=≢a:d                          ⍝   return zeros if no different pairs
+            n←(≠,i)∧s.m[i←a IM w]<0 ⋄ 0=≢p←n/⍥,i:s.m[i]@⊢d           ⍝   return calculated if all done
+            s.m[p]←ML⊃a MC⍥{↓⍉↑c[n/⍵]}w ⋄ s.m[i]@⊢d                  ⍝   calculate and return
+        }
+        m←⎕NS'MC' 'IM' ⋄ m.ML←⍺∘ML ⋄ m.L←m.ML RD                     ⍝ namespace with curried ML
+        m.D←(⍺÷2)+⍺∘× ⋄ w←↓⍉↑⍵ ⋄ m.M←w _M_(CM≢w) ⋄ m                 ⍝ degrees and misorientation functions
+    }
+:EndNamespace
+
+_GG_←{⎕IO←0                                                          ⍝ Grain Growth
+    (d r)←⍺⍺.(dx Rp) ⋄ gf←0 1 1,⍺⍺.GF ⋄ (w1 w2)←⍺⍺.w ⋄ Out←⍺⍺.Out
+    (q x)←⍵ ⋄ f←4⍴⊂≠⍨v←q>0                                           ⍝ orientations, total time and fractions
+    g←(⍺⍺.G0×⊢×1-⍟)@(0∘<)¨1⌊h÷⍨⍳1+h←⍵⍵.L⍺⍺.hagb                      ⍝ grain boundary energy
+    m←(⍺⍺.M0×*-⍺⍺.Qg÷8.314×⍺)×1-*-⍺⍺.A×⍺⍺.n*⍨h÷⍨⍳1+h                 ⍝ grain boundary mobility
+    K←(⌷∘(∘.((÷2)*⍨+⍥(×⍨))⍨⍳3),)¨                                    ⍝ directional constant
+    _P←{_←⍺⍺ ⍺⎕NPUT⍨⊂↓(t←'-'@('¯'∘=)14 ¯6⍕⍵) ⋄ t}                    ⍝ write to file and return text
+    _←1(w2 _P)⍉↑(⍵⍵.D⍳1+h)g m ⋄ (g m)×←d*2 ¯4 ⋄ gh←⊢/g               ⍝ write boundary energies and mobilities
+    D←h⌊⍵⍵.M ⋄ N←¯1 1(⊖¨,⌽¨)⊂ ⋄ L←(⍵⍵.L ⍺⍺.lagb)∘>                   ⍝ disorientation, neighbours, low angle
+    R←{                                                              ⍝ rate of transformation
+        rs←1⊖rn←m[on←⍵D⊢n←¯1⊖⍵] ⋄ re←1⌽rw←m[ow←⍵D⊢w←¯1⌽⍵]            ⍝   set rates to mobilities
+        (nw we)←n(2⌽w)D¨⊂w ⋄ (ns sw)←n w D¨⊂2⊖n                      ⍝   diagonal and opposite disorientations
+        (lnw lsw lwe)←L nw sw we ⋄ rw×←(lnw+lsw)K 1+lwe              ⍝   multiply by directional constant (w)
+        lne←1⌽¯1⊖lsw ⋄ lns←L ns ⋄ rn×←(lne+lnw)K 1+lns               ⍝   multiply by directional constant (n)
+        lse←1⌽1⊖lnw ⋄ rs×←(lse+lsw)K 1+lns ⋄ re×←(lse+lne)K 1+lwe    ⍝   multiply by directional constant (s,e)
+        k←0⌈2-⍨+/~lnw lsw lne lse lns lwe                            ⍝   multiple points factor
+        gse←1⌽1⊖gnw←g[nw] ⋄ gne←1⌽¯1⊖gsw←g[sw]                       ⍝   diagonal boundary energies
+        ge←gw←gs←gn←(4×gh)@(~⍺⍨)((⊢+1⊖⊢)g[on])+(⊢+1⌽⊢)g[ow]          ⍝   current boundary energy of each cell
+        gn-←⊃gnw gne+.×l←(~⊢∧¯1⊖⊢)¨0 1⌽¨L⊂ow ⋄ gs-←⊃gsw gse+.×1⊖¨l   ⍝   energy after transformation (n,s)
+        gw-←⊃gnw gsw+.×l←(~⊢∧¯1⌽⊢)¨0 1⊖¨L⊂on ⋄ ge-←⊃gne gse+.×1⌽¨l   ⍝   energy after transformation (w,e)
+        (⊂k⌷gf)×(N⍺)×rn rs rw re×(gn gs-⊂g[ns]),gw ge-⊂g[we]         ⍝   rate of non-valid cells is zero
+    }
+    X←(⊢×1-r×?⍤≠⍨)⍣(r>0){⊃((N,⊂)⍵)+.×(⍳5)=⊂⊃∘⍒⍤1⍺⍺↑[⍳1]⍺,⊂=⍨⍵}       ⍝ select neighbour to transform into
+    O←d×{2×(⍵÷○1)*÷2}∘{(⍳2)×.((≢,⍵){⍺⍺÷1⌈+/,⍵≠1⌽[⍺]⍵})⊂⍵}            ⍝ grain diameter
+    P←{⍺←2 ⋄ (q t)←⍵ ⋄ ⍺(w1 _P)1 2⍴t(O q)}                           ⍝ write time and diameter to file
+    ⎕←1 P q 0 ⋄ -@{~v}⊃⍺⍺.tmin{
+        (q t)←⍵ ⋄ x≤t+∆t←⍺⍺⌈÷⎕CT⌈⌈/∊(1-f)÷⍨r←v R q:{⎕←P⍵ ⋄ ⍵}q x     ⍝ find time increment and exit if done
+        f{n s w e←⍵ ⋄ ⍵×(⍵<1)∨⍵>(¯1⊖s)(1⊖n)(¯1⌽e)(1⌽w)}⍤+←∆t×r       ⍝ set current transformation fractions
+        ⎕←P(q←f X q)(t+∆t) ⋄ f×←~(⊂v∨←b)∨N⊢b←⊃∨/f≥1                  ⍝ transform and reset fractions
+        _←(t+∆t)Out q ⋄ ∇q(t+∆t)                                     ⍝ run Out function and repeat
+    }|q 0
+}
+
+Sim←{⎕IO←0
+    P←{⍵,⍨' ',⍨⍣(⍵≢'')⊢'-- ::'@(1+3×1+⍳5)∊⍕¨(⊃,100+1∘↓)6↑1⎕DT⎕TS}    ⍝ date, time and argument
+    W←{e[7+⍳2]←(-∘1,⊢)⊂,q>0 ⋄ e[⍳3]←↓⍉↑g[,|q] ⋄ ⍵⊣h e EBSD.Write&⍵}  ⍝ write ebsd file with new orientations
+    j←(⎕JSON⍠'Dialect' 'JSON5')⊃⎕NGET⍵ ⋄ ⎕←P'< ',⍵                   ⍝ read configuration from json5 file
+    (d x t f c o)←j.(da tmax T file crop out) ⋄ #.⎕RL←j.seed         ⍝ set parameters and read ang file
+    ⎕←P'< ',f,' ',⍕≢⊃⊃⌽(h e)←EBSD.Read f ⋄ e←c EBSD.Crop⍣(0∧.<c)⊢e   ⍝ read and crop ang file
+    (g q)←d EBSD.Orientations e ⋄ m←Euler.(M∘QE)↓⍉↑g                 ⍝ orientations and misorientations
+    q←-@{(⍴q)⍴⊃j.(ci iq)∨.>EBSD.(CI,⍥⊂IQ)e}q                         ⍝ valid cells
+    ⎕←P'> ',(W o,'0.ang'),' ',⍕≢⊃e                                   ⍝ write ang file with cropped ebsd
+    j.w←(⊂o),¨'time_diameter.txt' 'dis_gamma_M.txt'                  ⍝ output files
+    j.Out←{⍺≥t+tout: t⊢←⍺⊣##.W out,'.ang',⍨1↓0 4⍕⍺⊣##.q⊢←⍵ ⋄ ⍬}      ⍝ output function
+    j.t←0 ⋄ q←t(j _GG_ m)q x ⋄ ⎕←P'> ',W o,'1.ang'                   ⍝ RUN! and write results
+}
+
+Sim config
