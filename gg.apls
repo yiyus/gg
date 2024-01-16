@@ -2,7 +2,7 @@
 
 ⍝ grain growth cellular automata model jgl@dyalog.com 2023
 
-config←'gg.json'
+config←'gg.json5'
 
 :Namespace EBSD                                                      ⍝ Read and write ang files
     ⎕IO←0
