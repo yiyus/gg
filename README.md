@@ -23,7 +23,7 @@ or double-click the corresponding icon.
 
 Alternatively, from the Dyalog interpreter:
 
-    2⎕FIX({(' '=⊃⍵)∨∨/':{}'∊⍵}¨⊢⍤/⊢)⊃⎕NGET'gg.apls' 1
+    2⎕FIX{⍵⌿⍨(' '=⊃¨⍵)∨':{}'∘(∨/∊)¨⍵}⊃⎕NGET'gg.apls'1
     Sim'gg.json'
 
 Plotting
