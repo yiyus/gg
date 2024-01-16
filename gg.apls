@@ -69,7 +69,7 @@ _GG_←{⎕IO←0                                                          ⍝ G
         gw-←⊃gnw gsw+.×l←(~⊢∧¯1⌽⊢)¨0 1⊖¨L⊂on ⋄ ge-←⊃gne gse+.×1⌽¨l   ⍝   energy after transformation (w,e)
         (⊂k⌷gf)×(N⍺)×rn rs rw re×(gn gs-⊂g[ns]),gw ge-⊂g[we]         ⍝   rate of non-valid cells is zero
     }
-    X←(⊢×1-r×?⍤≠⍨)⍣(r>0){⊃((N,⊂)⍵)+.×(⍳5)=⊂⊃∘⍒⍤1⍺⍺↑[⍳1]⍺,⊂=⍨⍵}       ⍝ select neighbour to transform into
+    X←(⊢×1-r×?⍤≠⍨)⍣(r>0){⊃((N,⊂)⍵)+.×(⍳5)=⊂(⊢⍳⍤1 0⌈/)⍺⍺↑[⍳1]⍺,⊂=⍨⍵}  ⍝ select neighbour to transform into
     O←d×{2×(⍵÷○1)*÷2}∘{(⍳2)×.((≢,⍵){⍺⍺÷1⌈+/,⍵≠1⌽[⍺]⍵})⊂⍵}            ⍝ grain diameter
     P←{⍺←2 ⋄ (q t)←⍵ ⋄ ⍺(w1 _P)1 2⍴t(O q)}                           ⍝ write time and diameter to file
     ⎕←1 P q 0 ⋄ -@{~v}⊃⍺⍺.tmin{
