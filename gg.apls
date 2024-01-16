@@ -52,7 +52,7 @@ _GG_←{⎕IO←0                                                          ⍝ G
     (q x)←⍵ ⋄ f←4⍴⊂≠⍨v←q>0                                           ⍝ orientations, total time and fractions
     g←(⍺⍺.G0×⊢×1-⍟)@(0∘<)¨1⌊h÷⍨⍳1+h←⍵⍵.L⍺⍺.hagb                      ⍝ grain boundary energy
     m←(⍺⍺.M0×*-⍺⍺.Qg÷8.314×⍺)×1-*-⍺⍺.A×⍺⍺.n*⍨h÷⍨⍳1+h                 ⍝ grain boundary mobility
-    K←(⌷∘(∘.((÷2)*⍨+⍥(×⍨))⍨⍳3),)¨                                    ⍝ directional constant
+    K←((,0.5*⍨∘.+⍨2*⍨⍳3)⌷⍨∘⊂⊢+3×⊣)                                   ⍝ directional constant    
     _P←{_←⍺⍺ ⍺⎕NPUT⍨⊂↓(t←'-'@('¯'∘=)14 ¯6⍕⍵) ⋄ t}                    ⍝ write to file and return text
     _←1(w2 _P)⍉↑(⍵⍵.D⍳1+h)g m ⋄ (g m)×←d*2 ¯4 ⋄ gh←⊢/g               ⍝ write boundary energies and mobilities
     D←h⌊⍵⍵.M ⋄ N←¯1 1(⊖¨,⌽¨)⊂ ⋄ L←(⍵⍵.L ⍺⍺.lagb)∘>                   ⍝ disorientation, neighbours, low angle
