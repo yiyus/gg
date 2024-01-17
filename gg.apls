@@ -76,13 +76,13 @@ _GG_←{⎕IO←0                                                          ⍝ G
         (q t)←⍵ ⋄ x≤t+∆t←⍺⍺⌈÷⎕CT⌈⌈/∊(1-f)÷⍨r←v R q:{⎕←P⍵ ⋄ ⍵}q x     ⍝ find time increment and exit if done
         f{n s w e←⍵ ⋄ ⍵×(⍵<1)∨⍵>(¯1⊖s)(1⊖n)(¯1⌽e)(1⌽w)}⍤+←∆t×r       ⍝ set current transformation fractions
         ⎕←P(q←f X q)(t+∆t) ⋄ f×←~(⊂v∨←b)∨N⊢b←⊃∨/f≥1                  ⍝ transform and reset fractions
-        _←(t+∆t)Out q ⋄ ∇q(t+∆t)                                     ⍝ run Out function and repeat
+        _←(t+∆t)Out b q ⋄ ∇q(t+∆t)                                   ⍝ run Out function and repeat
     }|q 0
 }
 
 Sim←{⎕IO←0
     P←{⍵,⍨' ',⍨⍣(⍵≢'')⊢'-- ::'@(1+3×1+⍳5)∊⍕¨(⊃,100+1∘↓)6↑1⎕DT⎕TS}    ⍝ date, time and argument
-    W←{e[7+⍳2]←(-∘1,⊢)⊂,q>0 ⋄ e[⍳3]←↓⍉↑g[,|q] ⋄ ⍵⊣h e EBSD.Write&⍵}  ⍝ write ebsd file with new orientations
+    W←{e[7+⍳2]←(-∘1,⊢)⊂,q>0 ⋄ e[⍳3]←↓⍉↑g[,|q] ⋄ ⍵⊣h e EBSD.Write⍵}   ⍝ write ebsd file with new orientations
     j←(⎕JSON⍠'Dialect' 'JSON5')⊃⎕NGET⍵ ⋄ ⎕←P'< ',⍵                   ⍝ read configuration from json5 file
     (d x t f c o)←j.(da tmax T file crop out) ⋄ #.⎕RL←j.seed         ⍝ set parameters and read ang file
     ⎕←P'< ',f,' ',⍕≢⊃⊃⌽(h e)←EBSD.Read f ⋄ e←c EBSD.Crop⍣(0∧.<c)⊢e   ⍝ read and crop ang file
@@ -90,7 +90,7 @@ Sim←{⎕IO←0
     q←-@{(⍴q)⍴⊃j.(ci iq)∨.>EBSD.(CI,⍥⊂IQ)e}q                         ⍝ valid cells
     ⎕←P'> ',(W o,'0.ang'),' ',⍕≢⊃e                                   ⍝ write ang file with cropped ebsd
     j.w←(⊂o),¨'time_diameter.txt' 'dis_gamma_M.txt'                  ⍝ output files
-    j.Out←{⍺≥t+tout: t⊢←⍺⊣##.W out,'.ang',⍨1↓0 4⍕⍺⊣##.q⊢←⍵ ⋄ ⍬}      ⍝ output function
+    j.Out←{(b ##.q)←⍵ ⋄ ##.e[9]⌈←⊂10×,b ⋄ ⍺≥t+tout: t⊢←⍺⊣##.W out,'.ang',⍨1↓0 4⍕⍺⊣##.q ⋄ ⍬} ⍝ output function
     j.t←0 ⋄ q←t(j _GG_ m)q x ⋄ ⎕←P'> ',W o,'1.ang'                   ⍝ RUN! and write results
 }
 
