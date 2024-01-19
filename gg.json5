@@ -1,6 +1,8 @@
 {
-  file: "cr75-rdnd-sd2.ang", // input ang file
-  //file: "gg_0.ang",   // input ang file
+  input: "cr75-rdnd-sd2.ang", // input ang file
+  //input: "gg_0.ang",    // use saved (cropped) ang file
+  //input: 15.5,          // circle of given radious (in cells)
+  //input: [75, 75, 10],  // random microstructure (x, y, orientations)
   crop: [0, 0],       // crop region (um), [0, 0] to not crop
   ci: 0.1,            // confidence index
   iq: 1E3,            // image quality
@@ -15,7 +17,7 @@
   Qg: 140E3,          // activation energy for boundary mobility (J/mol)
   A: 5,               // factor in Humphrey's law
   n: 4,               // exponent in Humphrey's law
-  Rp: 0.001,          // random perturbation of transformation energies
+  Rp: 1E-4,           // random perturbation of transformation energies
   dx: 0.0375E-6,      // cell size (m)
   tmin: 1E-0,         // minimum step time (s)
   tmax: 300,          // simulation time (s)
