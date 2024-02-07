@@ -24,7 +24,7 @@
 
     c←↑(0 1 2 3)(1 0 3 2)(2 3 0 1)(3 2 1 0)                          ⍝ product components ⎕IO=0
     u←↑(1 ¯1 ¯1 ¯1)(1 1 1 ¯1)(1 ¯1 1 1)(1 1 ¯1 1)                    ⍝ product unit factors
-    QP←+/u×⊣(×⍤1)(⊂c)⌷⊢ ⋄ QC←×∘(1,-3⍴1) ⋄ QD←+.×∘QC                  ⍝ product, conjugate and dot product
+    QP←+/u×⊣(×⍤1)(⊂c)⌷⊢ ⋄ QC←×∘(1,-3⍴1) ⋄ QD←+.×                     ⍝ product, conjugate and dot product
                                                                      ⍝ quaternion from Euler angles
     RD←180÷⍨○ ⋄ UV←×∘(÷(÷2)*⍨+.×⍨)⍨ ⋄ (x y z)←=∘⊂⍨⍳3                 ⍝   degrees, unitary vector and unit vectors
     QA←((⊂2○⊢),(⊂1○⊢)∘.×∘UV{⍺←z ⋄ ⍺})∘(÷∘2) ⋄ QAD←QA∘RD              ⍝   quaternion from axis-angle
@@ -34,7 +34,7 @@
     cs,←,(1 0 0)(0 1 0)(0 0 1)∘.QAD 90 180 270                       ⍝   4-fold around <001>
     cs,←,(1 1 1)(¯1 1 1)(1 ¯1 1)(1 1 ¯1)∘.QAD 120 240                ⍝   3-fold around <111>
     cs,←,(1 1 0)(1 0 1)(0 1 1)(1 ¯1 0)(¯1 0 1)(0 1 ¯1)∘.QAD 180      ⍝   2-fold around <110>
-    MC←⊃2×¯2○1⌊cs⌈.(|QD)∘⊂QP∘QC ⋄ ML←⌊○⍤⊣÷⍨180×⊢                     ⍝ misorientation (cubic symmetry) and level
+    MC←⊃2×¯2○1⌊cs⌈.(|QD)∘⊂QC⍤QP∘QC ⋄ ML←⌊○⍤⊣÷⍨180×⊢                  ⍝ misorientation (cubic symmetry) and level
     M←{⍺←0.5                                                         ⍝ namespace to calculate misorientations
         IM←⌈(⊢+2÷⍨⊣×1-⍨⊣)⌊ ⋄ CM←{(c←⎕NS⍬).m←¯1⍴⍨1+⍵IM.-1 2 ⋄ c}      ⍝ index and cache of misorientations
         _M_ ← {(c s)←⍺⍺ ⍵⍵                                           ⍝ memoization
