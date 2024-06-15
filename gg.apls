@@ -1,6 +1,6 @@
 #!/usr/local/bin/dyalogscript MAXWS=16G
 
-⍝ grain growth cellular automata model jgl@dyalog.com 2023
+⍝ grain growth cellular automata model jgl@dyalog.com 2023-2024
 
 ⎕IO←0 ⋄ config←'gg.json5'
 
@@ -97,4 +97,4 @@ Sim←{
     ⎕←P'> ',(W o,'0.ang'),' ',⍕≢⊃e ⋄ q←j _GG_ m⊢q ⋄ ⎕←P'> ',W o,'1.ang'  ⍝ RUN! and write results
 }
 
-Sim config
+Sim¨a⊣⍣(0<≢a←1↓2⎕NQ#'GetCommandLineArgs')⊆config
