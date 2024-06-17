@@ -17,7 +17,7 @@
   Qg: 140E3,          // activation energy for boundary mobility (J/mol)
   A: 5,               // factor in Humphrey's law
   n: 4,               // exponent in Humphrey's law
-  Rp: 1E-4,           // random perturbation of transformation energies
+  Rp: 1E-4,           // random perturbation applied to transformation rates
   dx: 0.0375E-6,      // cell size (m)
   tmin: 1E-0,         // minimum step time (s)
   tmax: 300,          // simulation time (s)
