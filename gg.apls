@@ -42,7 +42,7 @@
             n←(≠,i)∧s.m[i←a IM w]<0 ⋄ 0=≢p←n/⍥,i:s.m[i]@⊢d           ⍝   return calculated if all done
             s.m[p]←ML⊃a MC⍥{↓⍉↑c[n/⍵]}w ⋄ s.m[i]@⊢d                  ⍝   calculate and return
         }
-        m←⎕NS'MC' 'IM' ⋄ m.ML←⍺∘ML ⋄ m.L←m.ML RD                     ⍝ namespace with curried ML
+        m←⎕NS'MC' 'IM' ⋄ m.ML←⍺∘ML ⋄ m.L←⌊÷∘⍺                        ⍝ namespace with curried ML
         m.D←(⍺÷2)+⍺∘× ⋄ w←↓⍉↑⍵ ⋄ m.M←w _M_(CM≢w) ⋄ m                 ⍝ degrees and misorientation functions
     }
 :EndNamespace
