@@ -58,23 +58,23 @@ _GG_←{                                                               ⍝ Grain
     D←h⌊⍵⍵.M ⋄ N←¯1 1(⊖¨,⌽¨)⊂ ⋄ L←(⍵⍵.L ⍺⍺.lagb)∘>                   ⍝ disorientation, neighbours, low angle
     R←{                                                              ⍝ rate of transformation
         rs←1⊖rn←m[on←⍵D⊢n←¯1⊖⍵] ⋄ re←1⌽rw←m[ow←⍵D⊢w←¯1⌽⍵]            ⍝   set rates to mobilities
-        (nw we)←n(2⌽w)D¨⊂w ⋄ (ns sw)←n w D¨⊂2⊖n                      ⍝   diagonal and opposite disorientations
+        (nw we)←n(1⌽⍵)D¨⊂w ⋄ (ns sw)←n w D¨⊂1⊖⍵                      ⍝   diagonal and opposite disorientations
         (lnw lsw lwe)←L nw sw we ⋄ rw×←(lnw+lsw)K 1+lwe              ⍝   multiply by directional constant (w)
         lne←1⌽¯1⊖lsw ⋄ lns←L ns ⋄ rn×←(lne+lnw)K 1+lns               ⍝   multiply by directional constant (n)
         lse←1⌽1⊖lnw ⋄ rs×←(lse+lsw)K 1+lns ⋄ re×←(lse+lne)K 1+lwe    ⍝   multiply by directional constant (s,e)
-        k←⊂3⌊4-lon+(lnw∧low)+(lsw∧1⊖lon←L on)+lse∧lne∧1⌽low←L ow     ⍝   multiple points factor
+        i←⊂4-4⌊lns+lnw+lsw+lne+lse+lwe                               ⍝   index of multiple points factor
         gse←1⌽1⊖gnw←g[nw] ⋄ gne←1⌽¯1⊖gsw←g[sw]                       ⍝   diagonal boundary energies
         ge←gw←gs←gn←(4×gh)@(~⍺⍨)((⊢+1⊖⊢)g[on])+(⊢+1⌽⊢)g[ow]          ⍝   current boundary energy of each cell
-        gn-←⊃gnw gne+.×l←(~⊢∧¯1⊖⊢)¨0 1⌽¨⊂low ⋄ gs-←⊃gsw gse+.×1⊖¨l   ⍝   energy after transformation (n,s)
-        gw-←⊃gnw gsw+.×l←(~⊢∧¯1⌽⊢)¨0 1⊖¨⊂lon ⋄ ge-←⊃gne gse+.×1⌽¨l   ⍝   energy after transformation (w,e)
-        0⌈(⊂k⌷gf)×(N⍺)×rn rs rw re×(gn gs-⊂g[ns]),gw ge-⊂g[we]       ⍝   rate of non-valid cells is zero
+        gn-←⊃gnw gne+.×l←(~⊢∧¯1⊖⊢)¨0 1⌽¨⊂L ow ⋄ gs-←⊃gsw gse+.×1⊖¨l  ⍝   energy after transformation (n,s)
+        gw-←⊃gnw gsw+.×l←(~⊢∧¯1⌽⊢)¨0 1⊖¨⊂L on ⋄ ge-←⊃gne gse+.×1⌽¨l  ⍝   energy after transformation (w,e)
+        0⌈(⊂i⌷gf)×(N⍺)×rn rs rw re×(gn gs-⊂g[ns]),gw ge-⊂g[we]       ⍝   rate of non-valid cells is zero
     }
-    X←(⊢×1+r×?⍤≠⍨)⍣(r≠0){⊃((N,⊂)⍵)+.×(⍳5)=⊂(⊢⍳⍤1 0⌈/)⍺⍺↑[0]⍺,⊂=⍨⍵}   ⍝ select neighbour to transform into
+    X←(⊢×1+r×?⍤≠⍨)⍣(r≠0){⊃((N,⊂)⍵)+.×(⍳5)=⊂⊃∘⍒⍤1⍺⍺↑[0]⍺,⊂=⍨⍵}        ⍝ select neighbour to transform into
     O←d×{2×(⍵÷○1)*÷2}∘{(⍳2)×.((≢,⍵){⍺⍺÷1⌈+/,⍵≠1⌽[⍺]⍵})⊂⍵}            ⍝ grain diameter
     P←{⍺←2 ⋄ (q t)←⍵ ⋄ ⍺(w1 _P)1 2⍴t(O q)}                           ⍝ write time and diameter to file
     ⎕←1 P q 0 ⋄ -@{~v}⊃⍺⍺.tmin{
         (q t)←⍵ ⋄ x≤t+∆t←⍺⍺⌈÷⎕CT⌈⌈/∊(1-f)÷⍨r←v R q:{⎕←P⍵ ⋄ ⍵}q x     ⍝ find time increment and exit if done
-        f{(n s w e)←⍵ ⋄ ⍵×(⍵<1)∨⍵>(¯1⊖s)(1⊖n)(¯1⌽e)(1⌽w)}⍤+←∆t×r     ⍝ set current transformation fractions
+        f{(n s w e)←⍵ ⋄ ⍵×(⍵<1)∨⍵≥(¯1⊖s)(1⊖n)(¯1⌽e)(1⌽w)}⍤+←∆t×r     ⍝ set current transformation fractions
         ⎕←P(q←f X q)(t+∆t) ⋄ f×←~(⊂v∨←b)∨N⊢b←⊃∨/f≥1                  ⍝ transform and reset fractions
         _←(t+∆t)Out b q ⋄ ∇q(t+∆t)                                   ⍝ run Out function and repeat
     }|q 0
