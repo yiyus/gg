@@ -48,11 +48,11 @@
 :EndNamespace
 
 _GG_←{                                                               ⍝ Grain Growth
-    (d r)←⍺⍺.(dx Rp) ⋄ gf←0 1,⍺⍺.GF ⋄ (w1 w2)←⍺⍺.w ⋄ Out←⍺⍺.Out
+    (d r c(w1 w2))←⍺⍺.(dx Rp c w) ⋄ rf←0 1,⍺⍺.RF ⋄ Out←⍺⍺.Out
     q←⍵ ⋄ x←⍺⍺.tmax ⋄ f←4⍴⊂≠⍨v←q≥0                                   ⍝ orientations, total time and fractions
     g←(⍺⍺.G0×⊢×1-⍟)@(0∘<)¨1⌊h÷⍨⍳1+h←⍵⍵.L⍺⍺.hagb                      ⍝ grain boundary energy
     m←(⍺⍺.M0×*-⍺⍺.Qg÷8.314×⍺⍺.T)×1-*-⍺⍺.A×⍺⍺.n*⍨h÷⍨⍳1+h              ⍝ grain boundary mobility
-    K←(,(÷2)*⍨∘.+⍨2*⍨⍳3)⌷⍨∘⊂⊢+3×⊣                                    ⍝ directional constant    
+    K←(,(÷2)*⍨∘.+⍨2*⍨⍳3)⌷⍨∘⊂⊢+3×⊣ ⋄ _C_←{1-c×0 1⍺⍺¨⊂¯1(⊢∧⍵⍵)L⍵}      ⍝ directional constant and neighbour drag
     _P←{_←⍺⍺ ⍺⎕NPUT⍨⊂↓(t←'-'@('¯'∘=)14 ¯6⍕⍵) ⋄ t}                    ⍝ write to file and return text
     _←1(w2 _P)⍉↑(⍵⍵.D⍳1+h)g m ⋄ (g m)×←d*2 ¯4 ⋄ gh←⊢/g               ⍝ write boundary energies and mobilities
     D←h⌊⍵⍵.M ⋄ N←¯1 1(⊖¨,⌽¨)⊂ ⋄ L←(⍵⍵.L ⍺⍺.lagb)∘>                   ⍝ disorientation, neighbours, low angle
@@ -62,12 +62,12 @@ _GG_←{                                                               ⍝ Grain
         (lnw lsw lwe)←L nw sw we ⋄ rw×←(lnw+lsw)K 1+lwe              ⍝   multiply by directional constant (w)
         lne←1⌽¯1⊖lsw ⋄ lns←L ns ⋄ rn×←(lne+lnw)K 1+lns               ⍝   multiply by directional constant (n)
         lse←1⌽1⊖lnw ⋄ rs×←(lse+lsw)K 1+lns ⋄ re×←(lse+lne)K 1+lwe    ⍝   multiply by directional constant (s,e)
-        i←⊂4-4⌊lns+lnw+lsw+lne+lse+lwe                               ⍝   index of multiple points factor
+        i←⊂4-4⌊lns+lnw+lne+lsw+lse+lwe                               ⍝   index of multiple points factor
         gse←1⌽1⊖gnw←g[nw] ⋄ gne←1⌽¯1⊖gsw←g[sw]                       ⍝   diagonal boundary energies
-        ge←gw←gs←gn←(4×gh)@(~⍺⍨)((⊢+1⊖⊢)g[on])+(⊢+1⌽⊢)g[ow]          ⍝   current boundary energy of each cell
-        gn-←⊃gnw gne+.×l←(~⊢∧¯1⊖⊢)¨0 1⌽¨⊂L ow ⋄ gs-←⊃gsw gse+.×1⊖¨l  ⍝   energy after transformation (n,s)
-        gw-←⊃gnw gsw+.×l←(~⊢∧¯1⌽⊢)¨0 1⊖¨⊂L on ⋄ ge-←⊃gne gse+.×1⌽¨l  ⍝   energy after transformation (w,e)
-        0⌈(⊂i⌷gf)×(N⍺)×rn rs rw re×(gn gs-⊂g[ns]),gw ge-⊂g[we]       ⍝   rate of non-valid cells is zero
+        ge←gw←gs←gn←(4×gh)@(~⍺⍨)g[on](⊣+(1⊖⊣)+(1⌽⊢)+⊢)g[ow]          ⍝   current boundary energy of each cell
+        gn-←⊃gnw gne+.×c←⌽_C_⊖ow ⋄ gs-←⊃gsw gse+.×1⊖¨c               ⍝   energy after transformation (n,s)
+        gw-←⊃gnw gsw+.×c←⊖_C_⌽on ⋄ ge-←⊃gne gse+.×1⌽¨c               ⍝   energy after transformation (w,e)
+        0⌈(⊂i⌷rf)×(N⍺)×rn rs rw re×(gn gs-⊂g[ns]),gw ge-⊂g[we]       ⍝   rate of non-valid cells is zero
     }
     X←(⊢×1+r×?⍤≠⍨)⍣(r≠0){⊃((N,⊂)⍵)+.×(⍳5)=⊂⊃∘⍒⍤1⍺⍺↑[0]⍺,⊂=⍨⍵}        ⍝ select neighbour to transform into
     O←d×{2×(⍵÷○1)*÷2}∘{(⍳2)×.((≢,⍵){⍺⍺÷1⌈+/,⍵≠1⌽[⍺]⍵})⊂⍵}            ⍝ grain diameter
