@@ -7,12 +7,13 @@
   ci: 0.1,            // confidence index
   iq: 1E3,            // image quality
   out: "gg_",         // output files (out0.ang and out1.ang)
-  tout: 60,           // time frequency to write output (0 for all, 1E99 for none)
+  tout: 100,          // time frequency to write output (0 for all, 1E99 for none)
+  dm: 0.1,            // delta misorientation angle (degrees)
   da: 0.5,            // delta angle (degrees)
-  lagb: 0.5,          // low angle grain boudary (degrees)
+  lagb: 1,            // low angle grain boudary (degrees)
   hagb: 15,           // high angle grain boundary (degrees)
   G0: 0.5,            // boundary energy of hagb in Read-Shockley equation (J/m^2)
-  RF: [1.25,1.5,2.5], // transformation rate factor at multiple points
+  Gf: [1.1,1.2,1.5],  // boundary energy factor at multiple points
   c: 0.7,             // grid thermodynamic parameter
   M0: 1.5E-6,         // mobility for hagb in Humphrey's law (m^4/J s)
   Qg: 140E3,          // activation energy for boundary mobility (J/mol)
