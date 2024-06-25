@@ -1,8 +1,8 @@
 {
-  input: "cr80.ang", // input ang file
+  input: "cr80.ang",    // input ang file
   //input: "gg_0.ang",    // use saved (cropped) ang file
-  //input: 15.5,          // circle of given radious (in cells)
-  //input: [75, 75, 10],  // random microstructure (x, y, orientations)
+  //input: 16,            // circle of given radious (in cells)
+  //input: [50, 50, 50],  // random microstructure (x, y, orientations)
   crop: [0, 0],       // crop region (um), [0, 0] to not crop
   ci: 0.1,            // confidence index
   iq: 1E3,            // image quality
@@ -13,7 +13,7 @@
   lagb: 1,            // low angle grain boudary (degrees)
   hagb: 15,           // high angle grain boundary (degrees)
   G0: 0.5,            // boundary energy of hagb in Read-Shockley equation (J/m^2)
-  Gf: [1.1,1.2,1.5],  // boundary energy factor at multiple points
+  Gf: [1.1,1.2,1.3],  // boundary energy factor at multiple points
   c: 0.7,             // grid thermodynamic parameter
   M0: 1.5E-6,         // mobility for hagb in Humphrey's law (m^4/J s)
   Qg: 140E3,          // activation energy for boundary mobility (J/mol)

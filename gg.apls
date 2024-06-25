@@ -2,7 +2,7 @@
 
 ⍝ grain growth cellular automata model jgl@dyalog.com 2023-2024
 
-⎕IO←0 ⋄ config←'gg.json5'
+⎕IO←0 ⋄ ⎕RL←1 ⋄ config←'gg.json5'
 
 :Namespace EBSD                                                      ⍝ Read and write ang files
 
@@ -14,7 +14,7 @@
     Write←{⍵⊣⍵1⎕NPUT⍨{⍺,⍵⎕CSV⍠2⍠'Separator' ' '⊢'' 'N'}/⍺}           ⍝ write comments and data to ang file
     Orientations←{                                                   ⍝ get orientations
         ⍺←0 ⋄ nx←⌊0.5+1+(⌈/x)÷⌈/|2-/x←4⊃⍵ ⋄ ny←⌊0.5+(≢x)÷nx          ⍝   find size
-        g←∪ea←(a←○⍺÷180)(⌊0.5+÷⍨)⍣(⍺>0)↓⍉↑3↑⍵                        ⍝   unique euler angles
+        g←∪ea←(a←○⍺÷180)(⌊0.5+÷⍨)⍣(⍺>0)↓⍉↑(○2)|3↑⍵                   ⍝   unique euler angles
         (a×⍣(⍺>0)⊢g)(nx ny⍴g⍳ea)                                     ⍝   return angles and indices
     }
     IQ←5∘⊃ ⋄ CI←6∘⊃                                                  ⍝ image quality and confidence index
@@ -52,7 +52,7 @@ _GG_←{                                                               ⍝ Grain
     q←⍵ ⋄ x←⍺⍺.tmax ⋄ f←4⍴⊂≠⍨v←q≥0                                   ⍝ orientations, total time and fractions
     g←(⍺⍺.G0×⊢×1-⍟)@(0∘<)¨1⌊h÷⍨⍳1+h←⍵⍵.L⍺⍺.hagb                      ⍝ grain boundary energy
     m←(⍺⍺.M0×*-⍺⍺.Qg÷8.314×⍺⍺.T)×1-*-⍺⍺.A×⍺⍺.n*⍨h÷⍨⍳1+h              ⍝ grain boundary mobility
-    K←(,(÷2)*⍨∘.+⍨2*⍨⍳3)⌷⍨∘⊂1+⊢+3×⊣ ⋄ _C_←{1-c×0 1⍺⍺¨⊂¯1(⊢∧⍵⍵)L⍵}    ⍝ directional constant and neighbour drag
+    K←(,(÷2)*⍨∘.+⍨2*⍨⍳3)⌷⍨∘⊂1+⊢+3×⊣ ⋄ _C_←{0 1⍺⍺¨⊂¯1(⊢∧⍵⍵)L⍵}        ⍝ directional constant and neighbour drag
     _P←{_←⍺⍺ ⍺⎕NPUT⍨⊂↓(t←'-'@('¯'∘=)14 ¯6⍕⍵) ⋄ t}                    ⍝ write to file and return text
     _←1(w2 _P)⍉↑(⍵⍵.D⍳1+h)g m ⋄ (g m)×←d*2 ¯4 ⋄ gh←4×⊢/g             ⍝ write boundary energies and mobilities
     D←h⌊⍵⍵.M ⋄ N←¯1 1(⊖¨,⌽¨)⊂ ⋄ L←(⍵⍵.L ⍺⍺.lagb)∘>                   ⍝ disorientation, neighbours, low angle
@@ -65,9 +65,14 @@ _GG_←{                                                               ⍝ Grain
         gn←gf⌷⍨⊂4-4⌊lns+lnw+lne+lsw+lse+lwe                          ⍝   multiple points factor
         ge←gw←gs←gn←gn×gh@(~⍺⍨)g[on](⊣+(1⊖⊣)+⊢+1⌽⊢)g[ow]             ⍝   current boundary energy of each cell
         gse←1⌽1⊖gnw←g[nw] ⋄ gne←1⌽¯1⊖gsw←g[sw]                       ⍝   diagonal boundary energies
-        gn-←⊃gnw gne+.×c←⌽_C_⊖ow ⋄ gs-←⊃gsw gse+.×1⊖¨c               ⍝   energy after transformation (n,s)
-        gw-←⊃gnw gsw+.×c←⊖_C_⌽on ⋄ ge-←⊃gne gse+.×1⌽¨c               ⍝   energy after transformation (w,e)
-        0⌈(N⍺)×rn rs rw re×(gn gs-⊂g[ns]),gw ge-⊂g[we]               ⍝   rate of non-valid cells is zero
+        (csw cse)←1⊖¨(cnw cne)←⌽_C_⊖ow ⋄ gns←g[ns]                   ⍝   2nd order neighbours (n,s)
+        (cen ces)←1⌽¨(cwn cws)←⊖_C_⌽on ⋄ gwe←g[we]                   ⍝   2nd order neighbours (w,e)
+        cn←cnw cne(cws∧lnw)+csw cse ces∧lns lns lne                  ⍝   neighbour constants (n)
+        cs←csw cse(cwn∧lsw)+cnw cne cen∧lns lns lse                  ⍝   neighbour constants (s)
+        cw←cwn cws(cne∧lnw)+cen ces cse∧lwe lwe lsw                  ⍝   neighbour constants (w)
+        ce←cen ces(cnw∧lne)+cwn cws csw∧lwe lwe lse                  ⍝   neighbour constants (e)
+        ng←(gnw gne gns)(gsw gse gns)(gnw gsw gwe)(gne gse gwe)      ⍝   transformation energies
+        0⌈(N⍺)×rn rs rw re×gn gs gw ge-ng(⊃+.×)¨0⌈1-c×cn cs cw ce    ⍝   rate of non-valid cells is zero
     }
     X←(⊢×1+r×?⍤≠⍨)⍣(r≠0){⊃((N,⊂)⍵)+.×(⍳5)=⊂⊃∘⍒⍤1⍺⍺↑[0]⍺,⊂=⍨⍵}        ⍝ select neighbour to transform into
     O←d×{2×(⍵÷○1)*÷2}∘{(⍳2)×.((≢,⍵){⍺⍺÷1⌈+/,⍵≠1⌽[⍺]⍵})⊂⍵}            ⍝ grain diameter
@@ -81,7 +86,7 @@ _GG_←{                                                               ⍝ Grain
 }
 Sim←{
     _←{⎕←P'' ⋄ ⍵.Out←{⍺≥t+tout: t⊢←⍺⊣⍺##.W⊃⌽⍵ ⋄ ⍬} ⋄ (m q)←⍺⍺ ⍵ ⋄ _←⍵.tmax W⍵_GG_ m⊢0 W q ⋄ ⎕←P''}
-    C←{Euler.(⍵.dm M↓⍉↑(1 1 1 QAD 63.8)(4⍴0))((⍵.input*2)>(+.×⍨)¨(⍳2⍴s)+0.5(⊣-⊣×⊢)s←2+⌈2×⍵.input)}_
+    C←{Euler.(⍵.dm M↓⍉↑(1 1 1 QAD 63.8)(4⍴0))((×⍨⍵.input)>+.×⍨¨(⍳2⍴s)+0.5(⊣-⊣×⊢)s←2+⌈2×⍵.input)}_
     R←{(x y n)←(⊢,×/)⍣(2=≢⍵.input)⊢⍵.input ⋄ (⍵.dm Euler.{⍺M UV⊃QP/(↓∘.=⍨⍳3)QA¨↓○2×?3⍵⍴0}n)(?x y⍴n)}_
     P←{⍵,⍨' ',⍨⍣(⍵≢'')⊢'-- ::'@(1+3×1+⍳5)∊⍕¨(⊃,100+1∘↓)6↑1⎕DT⎕TS}    ⍝ date, time and argument
     j←(⎕JSON⍠'Dialect' 'JSON5')⊃⎕NGET⍵ ⋄ ⎕←P'< ',⍵                   ⍝ read configuration from json5 file
