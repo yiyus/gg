@@ -1,5 +1,6 @@
 {
-  input: "cr80.ang",      // input ang file
+  input: [50, 50, 10],    // random microstructure
+  //input: "cr80.ang",    // input ang file
   //input: "gg_0.ang",    // use saved (cropped) ang file
   //input: 16,            // circle of given radious (in cells)
   crop: [0, 0, 50, 50],   // crop region [x0, y0, x1, y1] (um), [] to not crop
