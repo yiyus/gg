@@ -5,21 +5,37 @@
 
 :Namespace EBSD                                                      ⍝ Read and write ang files
 
-    Read←{                                                           ⍝ read ang file
+    Read←{'.ctf'≡⍥⎕C ¯4↑⍵: Ctf ⍵ ⋄ Ang ⍵}
+    Ang←{                                                            ⍝ read ang file
         (h l)←((2-'#'=⊃¨)⊆⊢)⊃⎕NGET⍵1                                 ⍝   get (hash) comments and data
-        h,⍥⊂⎕CSV⍠2⊢('(^\s+)|(\s+$)' '\s+'⎕R'' ','⊢l)'N'2 0           ⍝   format data and read as csv
+        c←⎕CSV⍠2⊢('(^\s+)|(\s+$)' '\s+'⎕R'' ','⊢l)'N'2 0             ⍝   format data and read as csv
+        e←⎕NS⍬ ⋄ e.h←h ⋄ e.ea←↓⍉↑c[⍳3]                               ⍝   return namespace
+        e.(x y ci iq p)←c[4 3 6 5 9] ⋄ e.ext←'ang'
+        e.C←{⍉↑(↓⍉↑ea),y x iq ci 0 0 0 r} ⋄ e
     }
-    Crop←{⍝ crop defined region
+    Ctf←{                                                            ⍝ read ctf file
+        S←{⊃('^',⍺,'Step\s+(.*)')⎕S{1⊃⎕VFI⊃↓/⍵.(Offsets,⊂Match)}⍵}   ⍝   step size from line
+        l←(⎕UCS 10)(≠⊆⊢)80 ¯1⎕MAP ⍵ 'R' ⋄ x←y←0                      ⍝   read lines
+        b←{'XStep'≡5↑⍵:0⊣x⊢←'X'S ⍵ ⋄ 'YStep'≡5↑⍵:0⊣y⊢←'Y'S ⍵         ⍝   read size
+            ∧/⍵∊⎕D,' .-',⎕UCS 9}¨l                                   ⍝   lines with only digits
+        c←⎕CSV⍠2⊢('(^\s+)|(\s+$)' '\s+'⎕R'' ','⊢b/l)'N' 2 0          ⍝   read as csv
+        e←⎕NS⍬ ⋄ e.h←(l/⍨~b) ⋄ e.ext←'ctf' ⋄ e.ea←180÷⍨○↓⍉↑c[5+⍳3]   ⍝   return namespace
+        _←⎕SIGNAL(x≠y)/11  ⋄ e.(x y)←x y×c[1 2] ⋄ e.(ci iq)←c[8 9]
+        e.C←{⍉↑÷∘(1⊃x)@1 2⊢0 x y 0 0,((180÷○1)×↓⍉↑ea),ci iq r} ⋄ e
+    }
+    Crop←{                                                           ⍝ crop defined region
         (a b x y)←⍺ ⋄ (x y)←1e99@(=∘0)x y                            ⍝   default limits are 0 0 1e99 1e99
-        ((((a∘≤∧x∘>)4∘⊃)∧((b∘≤∧y∘>)3∘⊃))⍵)∘/¨⍵                       ⍝   select points between limits
+        e⊣(e←⎕NS ⍵).(ea x y iq ci)/⍨←⊂((a∘≤∧x∘>)⍵.x)∧(b∘≤∧y∘>)⍵.y    ⍝   select points between limits
     }
-    Write←{⍵⊣⍵1⎕NPUT⍨{⍺,⍵⎕CSV⍠2⍠'Separator' ' '⊢'' 'N'}/⍺}           ⍝ write comments and data to ang file
+    Write←{                                                          ⍝ write comments and data to file
+        f←⍵,'.',⍺.ext                                                ⍝   file name
+        f⊣f 1⎕NPUT⍨⊂⍺.h,(⍺.C⍬)⎕CSV⍠2⍠'Separator' ' '⊢'' 'N'          ⍝   write header and data
+    }
     Orientations←{                                                   ⍝ get orientations
-        ⍺←0 ⋄ nx←⌊0.5+1+((⌈/-⌊/)x)÷⌈/|2-/x←4⊃⍵ ⋄ ny←⌊0.5+(≢x)÷nx     ⍝   find size
-        g←∪ea←(a←○⍺÷180)(⌊0.5+÷⍨)⍣(⍺>0)↓⍉↑(○2)|3↑⍵                   ⍝   unique euler angles
+        nx←⌊0.5+1+((⌈/-⌊/)⍵.x)÷⌈/|2-/⍵.x ⋄ ny←⌊0.5+(≢⍵.x)÷nx         ⍝   find size
+        g←∪ea←(a←○⍺÷180)(⌊0.5+÷⍨)⍣(⍺>0)⊢(○2)|⍵.ea                    ⍝   unique euler angles
         (a×⍣(⍺>0)⊢g)(nx ny⍴g⍳ea)                                     ⍝   return angles and indices
     }
-    IQ←5∘⊃ ⋄ CI←6∘⊃                                                  ⍝ image quality and confidence index
 :EndNamespace
 
 :Namespace Euler                                                     ⍝ Orientations and misorientations
@@ -89,12 +105,12 @@ Sim←{
     j.w←(⊂o),¨'time_diameter.txt' 'dis_gamma_M.txt'                  ⍝ output files
     W←o{⍵⊣(⊂↓⍕⍵)⎕NPUT(⍺⍺,'.txt',⍨1↓0 4⍕⍺)1} ⋄ D←{1=≢f: C⍵ ⋄ R⍵}      ⍝ output function for predefined inputs
     2|⎕DR f: W{⍵.Out←⍺⍺{⍺≥t+tout: t⊢←⍺⊣⍺ ⍺⍺⊃⌽⍵ ⋄ ⍬} ⋄ D⍵}j           ⍝ predefined input
-    ⎕←P'< ',f,' ',⍕≢⊃⊃⌽(h e)←EBSD.Read f ⋄ e←c EBSD.Crop⍣(0∨.≠c)⊢e   ⍝ read and crop ang file
+    e←c EBSD.Read f ⋄ ⎕←P'< ',f,' ',⍕≢e.x ⋄ e←c EBSD.Crop⍣(0∨.≠c)⊢e  ⍝ read and crop ang file
     (g q)←d EBSD.Orientations e ⋄ m←j.dm Euler.(M∘QE)↓⍉↑g            ⍝ orientations and misorientations
-    q←-@{(⍴q)⍴⊃j.(ci iq)∨.>EBSD.(CI,⍥⊂IQ)e}q                         ⍝ valid cells
-    W←{e[7+⍳2]←(-∘1,⊢)⊂,q>0 ⋄ e[⍳3]←↓⍉↑g[,|q] ⋄ ⍵⊣h e EBSD.Write⍵}   ⍝ write ebsd file with new orientations
-    j.Out←{(b ##.q)←⍵ ⋄ ##.e[9]⌈←⊂10×,b ⋄ ⍺≥t+tout: t⊢←⍺⊣##.W out,'.ang',⍨1↓0 4⍕⍺ ⋄ ⍬}  ⍝ write output
-    ⎕←P'> ',(W o,'0.ang'),' ',⍕≢⊃e ⋄ q←j _GG_ m⊢q ⋄ ⎕←P'> ',W o,'1.ang'  ⍝ RUN! and write results
+    q←-@{(⍴q)⍴⊃j.(ci iq)∨.>e.(ci iq)}q                               ⍝ valid cells
+    W←{e.r←,q>0 ⋄ e.ea←g[,|q] ⋄ e EBSD.Write⍵}                       ⍝ write ebsd file with new orientations
+    j.Out←{(b ##.q)←⍵ ⋄ ⍺≥t+tout: t⊢←⍺⊣##.W out,1↓0 4⍕⍺ ⋄ ⍬}         ⍝ write output
+    ⎕←P'> ',(W o,'0'),' ',⍕≢,q ⋄ q←j _GG_ m⊢q ⋄ ⎕←P'> ',W o,'1'      ⍝ RUN! and write results
 }
 
 Sim¨a⊣⍣(0<≢a←1↓2⎕NQ#'GetCommandLineArgs')⊆config
