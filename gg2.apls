@@ -1,0 +1,161 @@
+#!/usr/local/bin/dyalogscript MAXWS=16G
+⍝ grain growth cellular automata model jgl@dyalog.com 2025
+
+⎕IO←0 ⋄ ⎕RL←1 ⋄ config←'gg2.json5'
+
+:Namespace Euler                                                     ⍝ Orientations and misorientations
+    c←↑(0 1 2 3)(1 0 3 2)(2 3 0 1)(3 2 1 0)                          ⍝ product components ⎕IO=0
+    u←↑(1 ¯1 ¯1 ¯1)(1 1 1 ¯1)(1 ¯1 1 1)(1 1 ¯1 1)                    ⍝ product unit factors
+    QP←+/u×⊣(×⍤1)(⊂c)⌷⊢ ⋄ QC←×∘(1,-3⍴1) ⋄ QD←+.×                     ⍝ product, conjugate and dot product
+    RD←180÷⍨○ ⋄ UV←×∘(÷(÷2)*⍨+.×⍨)⍨ ⋄ (x y z)←=∘⊂⍨⍳3                 ⍝ degrees, unitary vector and unit vectors
+    QA←((⊂2○⊢),(⊂1○⊢)∘.×∘UV{⍺←z ⋄ ⍺})∘(÷∘2) ⋄ QAD←QA∘RD              ⍝ quaternion from axis-angle
+    QE←1(×⍤↑×⊢)∘⊃{⍺←z x z ⋄ ⍺}QP.QA⌽ ⋄ QED←QE∘RD                     ⍝ quaternion from Euler angles (zxz)
+    cs ← ⊂1 0 0 0                                                    ⍝ cubic symmetry: identity
+    cs,←,(1 0 0)(0 1 0)(0 0 1)∘.QAD 90 180 270                       ⍝                 4-fold around <001>
+    cs,←,(1 1 1)(¯1 1 1)(1 ¯1 1)(1 1 ¯1)∘.QAD 120 240                ⍝                 3-fold around <111>
+    cs,←,(1 1 0)(1 0 1)(0 1 1)(1 ¯1 0)(¯1 0 1)(0 1 ¯1)∘.QAD 180      ⍝                 2-fold around <110>
+    MC←⊃2×¯2○1⌊cs⌈.(|QD)∘⊂QC⍤QP∘QC ⋄ DL←⌊○⍤⊣÷⍨180×⊢                  ⍝ misorientation (cubic symmetry) and level
+    M←{⍺←0.5                                                         ⍝ namespace to calculate misorientations
+        IM←⌈(⊢+2÷⍨⊣×1-⍨⊣)⌊ ⋄ CM←{(c←⎕NS⍬).m←¯1⍴⍨1+⍵IM.-1 2 ⋄ c}      ⍝ index and cache of misorientations
+        _M_ ← {(c s)←⍺⍺ ⍵⍵                                           ⍝ memoization
+            (a w)←(⊂,d←⍺≠⍵)/∘,¨⍺ ⍵ ⋄ 0=≢a:d                          ⍝   return zeros if no different pairs
+            n←(≠,i)∧s.m[i←a IM w]<0 ⋄ 0=≢p←n/⍥,i:s.m[i]@⊢d           ⍝   return calculated if all done
+            s.m[p]←DL⊃a MC⍥{↓⍉↑c[n/⍵]}w ⋄ s.m[i]@⊢d}                 ⍝   calculate and return
+        m←⎕NS'MC' 'IM' ⋄ m.DL←⍺∘DL ⋄ m.L←⌊÷∘⍺                        ⍝ namespace with curried DL
+        m.D←(⍺÷2)+⍺∘× ⋄ w←⍵ ⋄ m.M←w _M_(CM≢w) ⋄ m                    ⍝ degrees and misorientation functions
+    }
+    RND←{F←{(1 2○2×⊂○?⍺⍴0)×⊂⍵*÷2} ⋄ 1(×⍤↑×⊢)UV ⍵(F∘(1∘-),F)?⍵⍴0}     ⍝ random orientations (quaternions)
+    A2←12○⊢+0J1×⊣                                                    ⍝ arctan2
+    EA←{                                                             ⍝ euler angles from quaternion
+        p←¯2○1-⍨2×(+/×⍨2↑[(≢⍴w)-1]w)÷+/×⍨w←3⌽↑[(≢⍴⍵)-1+÷2]⍵
+        s←A2/(⊂⍳2)∘⌷⍤1⊢w ⋄ d←A2⍨/(⊂2+⍳2)∘⌷⍤1⊢w ⋄ p1←0@(⊃0(○1)∨.=(⊂p)⍨)s-d
+        p2←((⎕CT>|p)/⍥,2×s)@(⎕CT>∘|p⍨)((⎕CT>|p-○1)/⍥,2×d)@(⎕CT>∘|(○1)-⍨p⍨)s+d
+        (○2)|⊂[(1-⍨≢⍴⍵)↓⍳(≢⍴p)]↑[⍳1]p1 p p2
+    }
+:EndNamespace
+
+:Namespace EBSD                                                      ⍝ Read and write ang files
+    Read←{'.ctf'≡⍥⎕C ¯4↑⍵: Ctf ⍵ ⋄ Ang ⍵}
+    Ang←{                                                            ⍝ read ang file
+        (h l)←((2-'#'=⊃¨)⊆⊢)⊃⎕NGET⍵1                                 ⍝   get (hash) comments and data
+        c←⎕CSV⍠2⊢('(^\s+)|(\s+$)' '\s+'⎕R'' ','⊢l)'N'2 0             ⍝   format data and read as csv
+        e←⎕NS⍬ ⋄ e.h←h ⋄ e.ea←↓⍉↑c[⍳3]                               ⍝   return namespace
+        e.(x y ci iq p)←c[4 3 6 5 9] ⋄ e.ext←'ang'
+        e.C←{⍉↑(↓⍉↑ea),y x iq ci 0 0 0} ⋄ e
+    }
+    Ctf←{                                                            ⍝ read ctf file
+        R←{⊃⎕CSV(⊃↓/⍵.(Offsets,⊂Match))'S' 2}                        ⍝   read numeric value
+        S←{⊃('^',⍺,'Step\s+(.*)')⎕S R ⍵}                             ⍝   step size from line
+        l←(⎕UCS 10)(≠⊆⊢)80 ¯1⎕MAP ⍵ 'R' ⋄ x←y←0                      ⍝   read lines
+        b←{'XStep'≡5↑⍵:0⊣x⊢←'X'S ⍵ ⋄ 'YStep'≡5↑⍵:0⊣y⊢←'Y'S ⍵         ⍝   read size
+            ∧/⍵∊⎕D,' .-',⎕UCS 9}¨l~¨⎕UCS 13                          ⍝   lines with only digits
+        c←⎕CSV⍠2⊢('(^\s+)|(\s+$)' '\s+'⎕R'' ','⊢b/l~¨⎕UCS 13)'N' 2 0 ⍝   read as csv
+        e←⎕NS⍬ ⋄ e.h←(l/⍨~b) ⋄ e.ext←'ctf' ⋄ e.ea←180÷⍨○↓⍉↑c[5+⍳3]   ⍝   return namespace
+        _←⎕SIGNAL(x≠y)/11  ⋄ e.(x y)←x y×c[1 2] ⋄ e.(ci iq)←c[8 9]
+        e.C←{⍉↑÷∘(1⊃x)@1 2⊢0 x y 0 0,((180÷○1)×↓⍉↑ea),ci iq} ⋄ e
+    }
+    Crop←{                                                           ⍝ crop defined region
+        (a b x y)←⍺ ⋄ (x y)←1e99@(=∘0)x y                            ⍝   default limits are 0 0 1e99 1e99
+        e⊣(e←⎕NS ⍵).(ea x y iq ci)/⍨←⊂((a∘≤∧x∘>)⍵.x)∧(b∘≤∧y∘>)⍵.y    ⍝   select points between limits
+    }
+    Write←{                                                          ⍝ write comments and data to file
+        f←⍵,'.',⍺.ext                                                ⍝   file name
+        f⊣f 1⎕NPUT⍨⊂⍺.h,(⍺.C⍬)⎕CSV⍠2⍠'Separator' ' '⊢'' 'N'          ⍝   write header and data
+    }
+    Orientations←{                                                   ⍝ get orientations
+        ⍵.d←⍵.x⌊⍥(⌈/⍤|2-/⊢)⍵.y
+        nx←⌊0.5+1+((⌈/-⌊/)⍵.x)÷⍵.d ⋄ ny←⌊0.5+(≢⍵.x)÷nx               ⍝   find size
+        ⍵.g←∪ea←(a←○⍺÷180)(⌊0.5+÷⍨)⍣(⍺>0)⊢(○2)|⍵.ea                  ⍝   unique euler angles
+        (a×⍣(⍺>0)⊢⍵.g)(nx ny⍴⍵.g⍳ea)                                 ⍝   return angles and indices
+    }
+    Diameter←{2×(⍵÷○1)*÷2}∘{(⍳2)×.((≢,⍵){⍺⍺÷1⌈+/,⍵≠1⌽[⍺]⍵})⊂⍵}       ⍝ grain diameter (in cells)
+:EndNamespace
+
+_SIM_←{
+    o q ddis lagb hagb G0 M0 Qg A n flip f3 f4 fg dtmin kmodel dx←⍺
+    CB←⍺⍺ ⋄ LF←⍵⍵
+    N1←{(1⌽⍵)(1⊖1⌽⍵)(1⊖⍵)(1⊖¯1⌽⍵)}                              ⍝ e se s sw (from o)
+    N2←{(¯1⊖¯1⌽⍵)(¯1⊖⍵)(¯1⊖1⌽⍵),(N1 ⍵),⊂¯1⌽⍵}                   ⍝ nw n ne e se s sw w (from o)
+    N21←{e se s sw←⍵ ⋄ (¯2⊖¯2⌽se)(¯2⊖s)(¯2⊖2⌽sw),⍵,⊂¯2⌽e}       ⍝ nw n ne e se s sw w (from n1=e se s sw)
+    D21←{e se s sw←⍵ ⋄ (¯1⊖¯1⌽se)(¯1⊖s)(¯1⊖1⌽sw),⍵,⊂¯1⌽e}       ⍝ nw n ne e se s sw w (from d1=de dse ds dsw)
+    u←↓⍉↑|(⊢÷(÷2)*⍨+.×⍨¨)(1 ¯1)(0 ¯1)(¯1 ¯1)(¯1 0)(¯1 1)(0 1)(1 1)(1 0)      ⍝ unit vectors nw n ne e se s sw w
+    mis←ddis Euler.M q ⋄ DL←mis.DL ⋄ D←(h←DL 180÷⍨○hagb)⌊mis.M               ⍝ disorientations
+    TE←{⊃(1-⍺×1-fg)+.×⌷∘g¨¨⍵}                                                ⍝ transformation energy
+    M←M0 Qg A n∘(h{m q a n←⍺ ⋄ (m×*-q÷8.314×⍵)×1-*-a×n*⍨⍺⍺÷⍨⍳1+⍺⍺})          ⍝ boundary mobility
+    g←G0∘{(⍺×⊢×1-⍟)@(0∘<)¨1⌊⍵÷⍨⍳1+⍵}h                                        ⍝ boundary energy
+    k←kmodel÷×⍨dx ⋄ l←DL 180÷⍨○lagb
+    STEP←{
+        dt m←⍺ ⋄ o a t T←⍵ ⋄ dt-←t ⋄ dt≤0: o a t T ⋄ TL←{⍵+LF o ⍵ T t}TE
+        b2 nn←{(∘.=⍨⍵)(3⌊1-⍨≢∘∪¨⊃,¨/⍵)}n2←N21⊢n1←N1 o
+        f2 g2 m2←{(⍵∘.(∊¨)N2⊃,¨/⍵)(⊃+/⌷∘g¨¨⍵)(⌷∘m¨¨⍵)}D21⊢d1←(⊂o)D¨n1
+        de dse ds dsw←d1 ⍝ (4)
+        dee dsee dssee dsse dss←o∘D¨(2⌽o)(1⊖2⌽o)(2⊖2⌽o)(2⊖1⌽o)(2⊖o) ⍝ (9)
+        tnw←f2[0;]TL ¯1⊖¨¯1⌽¨0 de dee dsee dssee dsse dss ds
+        tse←f2[4;]TL 1⊖¨1⌽¨0(¯1⌽de)(¯2⌽dee)(¯1⊖¯2⌽dsee)(¯2⊖¯2⌽dssee)(¯2⊖¯1⌽dsse)(¯2⊖dss)(¯1⊖ds)
+        dssw←o D 2⊖¯1⌽o ⍝ - ssee (9)
+        tn←f2[1;]TL ¯1⊖¨(¯1⌽de)0 de dse dsse dss dssw dsw
+        ts←f2[5;]TL 1⊖¨de 0(¯1⌽de)(¯1⊖¯1⌽dse)(¯2⊖¯1⌽dsse)(¯2⊖dss)(¯2⊖1⌽dssw)(¯1⊖1⌽dsw)
+        dsww←o D 1⊖¯2⌽o ⍝ - sse (9)
+        tw←f2[7;]TL ¯1⌽¨(¯1⊖ds)(¯1⊖1⌽dsw)(¯1⊖2⌽dsww)dee dsee dse ds 0
+        te←f2[3;]TL 1⌽¨ds dsw dsww(¯2⌽dee)(¯1⊖¯2⌽dsee)(¯1⊖¯1⌽dse)(¯1⊖ds)0
+        dssww←o D 2⊖¯2⌽o ⍝ - sw se see (7)
+        tne←f2[2;]TL ¯1⊖¨1⌽¨(¯2⌽dee)(¯1⌽de)0 ds dss dssw dssww dsww
+        tsw←f2[6;]TL 1⊖¨¯1⌽¨dee de 0(¯1⊖ds)(¯2⊖dss)(¯2⊖1⌽dssw)(¯2⊖2⌽dssww)(¯1⊖2⌽dsww)
+        k2←(÷2)*⍨⊃+.×⍨+/¨u×⍤1¨⊂b2
+        r←k×(⊂0 1 f3 f4[nn])×k2×m2×0⌈(⊂g2)-tnw tn tne te tse ts tsw tw   ⍝ transformation rates
+        dt←{dt⌊dtmin⌈⌊/⍵÷⍨⍥((⍵>0)/∊)1-a}∊r                               ⍝ time increment
+        a t+←(r×dt)dt                                                    ⍝ accumulators
+        p←(⊃⍒)⍤1↑[-÷2]a                                                  ⍝ parents
+        f←(⊢≥flip*⍨?⍤≠⍨)p⊃⍤0 1↑[-÷2]a                                    ⍝ cells to flip
+        o←(⍴o)⍴(f/⍥,p⊃⍤0 1↑[-÷2]n2)@((,f)⍨),o                            ⍝ update orientations
+        a←a×(⊂×N21⍤N1)~f                                                 ⍝ reset accumulators
+        ⍺⍺ o a t T
+    }
+    S←{t T←⍺+(2⊃⍵)0 ⋄ t(M T)CB STEP⍣{t≤2⊃⍵}(3↑⍵),T}
+    ⊃S/(⌽⍵),⊂CB o 0 0(⊃⌽⊃⍵)
+}
+
+SIM←{
+    0::⎕SIGNAL ⎕EN
+    CUT←(1 1↓¯1 ¯1↓⊢)⍣⍺.edge
+    EDGE←{m n←(⍴o←⍵)-1 ⋄ o[0 m;]←o[2(m-2);] ⋄ o[;0 n]←o[;2(n-2)] ⋄ o}⍣⍺.edge
+    N2←(,2-⍳3 3){a b←⍺ ⋄ a⊖b⌽⍵}¨⊂
+    FIX←{v←⍵≥0 ⋄ ((~v)/⍥,⍵⌷⍨∘(⊃⍤⍒)⍤1⍥(↑[-÷2]N2)(?≠⍨⍵)×v×⊃(⊂⍵)+.=N2 ⍵)@(~v⍨)⊢⍵}⍣≡
+    CIRCLE←{o←(×⍨⍵)>+.×⍨¨(⍳2⍴s)+0.5(⊣-⊣×⊢)s←2×2×⍵ ⋄ q←(1 1 1 Euler.QAD 63.8)(4⍴0) ⋄ o q}
+    RANDOM←{w h n←⍵ ⋄ q←↓⍉↑Euler.RND n ⋄ o←?h w⍴n ⋄ o q}
+    INPUT←{                                                                      ⍝ microstructure
+        2|⎕DR ⍵:{1=≢⍵:CIRCLE ⍵ ⋄ 3=≢⍵: RANDOM ⍵}⍵                                ⍝   generate
+        ⍝ TODO: txt
+        _←0 PRT ⍵,' ',⍕≢(e⊢←EBSD.Read ⍵).x ⋄ e⊢←⍺.crop EBSD.Crop⍣(0∨.≠⍺.crop)⊢e  ⍝   read and crop
+        ea o←⍺.dang EBSD.Orientations e                                          ⍝   euler angles and micro
+        (FIX ¯1@(⍺.(ci iq)∘{(⍴o)⍴⊃⍺∨.>e.(ci iq)})o)(↓⍉↑Euler.QE↓⍉↑ea)            ⍝   fixed micro and quaternions
+    }
+    CB←⍺∘{o a t T←⍵                                                              ⍝ callback
+        td⍪←{⍵⊣⎕←12 ¯6⍕⍵}⍣(⍺.verbose>1)⊢t T,⍺.dx×EBSD.Diameter c←CUT o           ⍝   time and diameter
+        _←{⍵.Callback c(CUT¨a)t}⍣(0≠⊃⍺.⎕NC'Callback')⊢⍺                          ⍝   user callback
+        o←EDGE o ⋄ t<to+⍺.tout:o a t T                                           ⍝   fix edge
+        to⊢←t ⋄ o a t T⊣1 PRT(WRT o to),' ',⍕≢,c                                 ⍝   write output
+    }
+    LF←⍺∘{o tg T t←⍵                                                             ⍝ local field
+        ∆tg←⍺.(wkt×1.380649e¯23÷×⍨dx)×T×1-2×?≠⍨tg ⋄ ∆tg ⋄ 0∊⍴e:∆tg               ⍝   thermal noise
+        ∆tg←⍺{⍵+⍺.wci×(1-e.ci⍴⍨⍴o)×1-2×?≠⍨⍵}⍣(⍺.wci>0)⊢tg                        ⍝   ci noise
+        ⍺{⍵+⍺.iq×g×(⍴o)⍴1-(⊢÷⌈/)e.iq}⍣(⍺.iq>0)⊢∆tg                               ⍝   iq push
+    }
+    WRT←⍺.out{~0∊⍴e:EWRT ⍵ ⋄ o t←⍵ ⋄ f⊣(⊂↓⍕o)⎕NPUT(f←⍺⍺,'_','.txt',⍨1↓0 4⍕t)1}   ⍝ write output
+    EWRT←⍺.out{o t←⍵ ⋄ e.ea←e.g[,|o] ⋄ e EBSD.Write ⍺⍺,'_',1↓0 4⍕t}              ⍝ write ebsd file
+    PRT←(⍺.verbose>1){⎕←(35↑''),⍣⍺⍺⊢'<>'[⍺],' ',⍵}⍣(⍺.verbose>0)                 ⍝ print in(0)/out(1)
+    e←⍬ ⋄ td←0 3⍴⍬ ⋄ o q←⍺ INPUT ⍺.input ⋄ _←1 PRT(WRT o 0),' ',⍕≢,o             ⍝ read input
+    ⍺.dx←{e.d}⍣(⍺.dx=0)⊢⍺.dx ⋄ o←EDGE CUT⍣¯1⊢o                                   ⍝ init
+    w←⍺.tout{                                                                    ⍝ output steps
+        t←+\⍺{(⍺|⍵),⍨⍣(0≠⍺|⍵)⊢⍺/⍨⌊⍵÷⍺}⊃⌽w←+\⊃¨⍵                                  ⍝   time steps
+        ↓⍉↑(-2-/0,{⍵[⍋⍵]}∪t,w)((⊃∘⌽¨⍵)[0,¯1↓(0,w)⍸{⍵[⍋⍵]}∪t,w])                  ⍝   temp at each step
+    },⊆⍵
+    to←0 ⋄ o a t T←w CB _SIM_ LF⍨o q,⍺.(ddis lagb hagb G0 M0 Qg A n flip f3 f4 fg dtmin kmodel dx)
+    to←t-⍺.tout ⋄ _←⍺.out{(Euler.EA↓⍉↑⍵)⎕CSV⍠'IfExists' 'Replace'⊢⍺,'_ea.csv'}⍣(0∊⍴e)⊢q
+    (CUT⊃CB⍣(0≠⍺.tout|⊃⌽⊃⌽w)⊢o a t T)td
+}
+
+{   j←(⎕JSON⍠'Dialect' 'JSON5')⊃⎕NGET⍵
+    PRT←{⎕←'<>'[⍺],' ',⍵}⍣(j.verbose>0) ⋄ _←0 PRT ⍵ ⋄ o td←j SIM j.process
+    _←td ⎕CSV⍠'IfExists' 'Replace'⊢f←j.out,'_tTd.csv' ⋄ _←1 PRT f
+}¨a⊣⍣(0<≢a←1↓2⎕NQ#'GetCommandLineArgs')⊆config
