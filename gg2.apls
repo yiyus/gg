@@ -83,7 +83,7 @@ _SIM_←{
     TE←{⊃(1-⍺×1-fg)+.×⌷∘g¨¨⍵}                                                ⍝ transformation energy
     M←M0 Qg A n∘(h{m q a n←⍺ ⋄ (m×*-q÷8.314×⍵)×1-*-a×n*⍨⍺⍺÷⍨⍳1+⍺⍺})          ⍝ boundary mobility
     g←G0∘{(⍺×⊢×1-⍟)@(0∘<)¨1⌊⍵÷⍨⍳1+⍵}h                                        ⍝ boundary energy
-    k←kmodel÷×⍨dx ⋄ l←DL 180÷⍨○lagb
+    k←kmodel÷8××⍨dx ⋄ l←DL 180÷⍨○lagb
     STEP←{
         dt m←⍺ ⋄ o a t T←⍵ ⋄ dt-←t ⋄ dt≤0: o a t T ⋄ TL←{⍵+LF o ⍵ T t}TE
         b2 nn←{(∘.=⍨⍵)(3⌊1-⍨≢∘∪¨⊃,¨/⍵)}n2←N21⊢n1←N1 o
