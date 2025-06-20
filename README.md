@@ -117,4 +117,4 @@ This model incorporates a sophisticated set of features to achieve a balance bet
 
 ## Usage
 
-The model is provided as a `.apls` script. To run it, specify the `.json5` configuration file(s) as argument(s). If no file name is given, the default file `gg2.json5` is used. See this file for further details about configuration options.
+To run the model, use the provided `.apls` script. To run it, specify the `.json5` configuration file(s) as argument(s). If no file name is given, the default file `gg.json5` is used. See this file for further details about configuration options.
