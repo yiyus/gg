@@ -8,15 +8,19 @@ This model incorporates a sophisticated set of features to achieve a balance bet
 
 * **Crystallography:** Crystallographic orientations are represented as Euler angles (Bunge convention) to the user, and internally as quaternions. Misorientations are calculated considering cubic crystal symmetry
 
-* **Moore Neighborhood:** Boundary energy densities are calculated from the contribution of 8 neighbours
+* **User configurable grid:** The neighbourhood of a cell can be defined as von Newmann (square grid, 4 neighbours), Moore (square grid, 8 neighbours) or hexagonal (6 neighbours). The total boundary energy of each cell $\gamma_o$ is calculated as:
 
-    $$\gamma_o=\sum_n\gamma_n=\gamma_{NW}+\gamma_N+\gamma_{NE}+\gamma_E+\gamma_{SE}+\gamma_S+\gamma_{SW}+\gamma_W$$
+    * *Von Newmann:* $\gamma_o=\gamma_N+\gamma_E+\gamma_S+\gamma_W$
+
+    * *Moore:* $\gamma_o=\gamma_{NW}+\gamma_N+\gamma_{NE}+\gamma_E+\gamma_{SE}+\gamma_S+\gamma_{SW}+\gamma_W$
+
+    * *Hexagonal:* $\gamma_o=\gamma_{NW}+\gamma_{NE}+\gamma_E+\gamma_{SE}+\gamma_{SW}+\gamma_W$
 
 * **Robust Simulation Mechanics:** The model calculates the transformation rate ($r_n$) for a cell to flip to the orientation of neighbour $p$ (the *parent* cell) based on the equation
 
-    $$r_n = \left(\frac{k_r}{\Delta x^2 N}\right) M_n K |\Delta\gamma_n|$$
+    $$r_n = \left(\frac{k_r}{A_c N}\right) M_n K |\Delta\gamma_n|$$
 
-    The rate is scaled by cell area $\Delta x^2$ and number of neighbours $N$ to ensure physical kinetics are independent of grid resolution, and by an heuristic factor $K$ (expained below). The $k_r$ parameter, configurable by the user, works as an overall scaling factor for the model.
+    The rate is scaled by cell area $A_c$ and number of neighbours $N$ to ensure physical kinetics are independent of grid resolution, and by an heuristic factor $K$ (expained below). The $k_r$ parameter, configurable by the user, works as an overall scaling factor for the model.
     
     Each time step, an accumulator of transformation into each neighbor is updated such that $a_n{t+\Delta t}=a_n(t) + r_n \Delta t$. The cell is then transformed or not interpreting this accumulator as a probability (scaled by the user configurable factor $\xi_f$, such that a higher $\xi_f$ implies higher randomness). Therefore, the condition to transform into neighbor $n$ is
     
@@ -36,7 +40,7 @@ This model incorporates a sophisticated set of features to achieve a balance bet
 
     * *Thermal Energy:* Adds a deterministic driving force for recrystallization
     
-    $$\Delta\gamma_T=w_T\frac{k T}{\Delta x^2} \xi(-1,1)$$
+    $$\Delta\gamma_T=w_T\frac{k T}A_c \xi(-1,1)$$
 
     * *Image Quality:* Higher energy push at cells with more deffects (more image quality, also related with stored energy)
     
@@ -73,8 +77,8 @@ This model incorporates a sophisticated set of features to achieve a balance bet
 | Symbol | Description |
 | :--- | :--- |
 | **Grid** | |
-| $\Delta x$ | Cell size (square grid) |
-| $N$ | Number of interacting neighbors for a cell (8 for Moore) |
+| $A_c$ | Cell area |
+| $N$ | Number of interacting neighbors for a cell (von Newmann 4, hexagonal 6, Moore 8) |
 | **Process** | |
 | $T$ | Temperature of the process |
 | $\Delta t$ | Time increment |
