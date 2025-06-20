@@ -1,0 +1,22 @@
+_SIM_←{
+    o q ddis lagb hagb G0 M0 Qg A n flip f3 f4 fg dtmin kmodel dx g←⍺
+    CB←⍺⍺ ⋄ LF←⍵⍵
+    mis←ddis Euler.M q ⋄ DL←mis.DL ⋄ D←(h←DL 180÷⍨○hagb)⌊mis.M               ⍝ disorientations
+    TE←{⊃(1-⍺×1-fg)+.×⌷∘g0¨¨⍵}                                               ⍝ transformation energy
+    M←M0 Qg A n∘(h{m q a n←⍺ ⋄ (m×*-q÷8.314×⍵)×1-*-a×n*⍨⍺⍺÷⍨⍳1+⍺⍺})          ⍝ boundary mobility
+    g0←G0∘{(⍺×⊢×1-⍟)@(0∘<)¨1⌊⍵÷⍨⍳1+⍵}h                                       ⍝ boundary energy
+    k←kmodel÷(≢g.u)×g.A dx ⋄ l←DL 180÷⍨○lagb ⋄ g.tr←(≢⊃g.u)⍴⊂(⍴o)⍴0
+    STEP←{
+        dt m0←⍺ ⋄ o a t T←⍵ ⋄ dt-←t ⋄ dt≤0: o a t T ⋄ TL←{⍵+LF o ⍵ T t}TE
+        b2 nn←{(∘.=⍨⍵)(3⌊1-⍨≢∘∪¨⊃,¨/⍵)}n2←g.N21⊢n1←g.N1 o                    ⍝ boundaries and number of neighbours
+        f2 g2 m2←{(⍵∘.(∊¨)g.N2⊃,¨/⍵)(⊃+/⌷∘g0¨¨⍵)(⌷∘m0¨¨⍵)}g.D21⊢d1←(⊂o)D¨n1  ⍝ support, energy and mobility
+        k2←k×(⊂0 1 f3 f4[nn])×(÷2)*⍨⊃+.×⍨+/¨g.u×⍤1¨⊂b2                       ⍝ combined factor
+        r←k2×m2×0⌈(⊂g2)-f2 TL g.T2 D o d1                                    ⍝ transformation rates
+        dt←{dt⌊dtmin⌈⌊/⍵÷⍨⍥((⍵>0)/∊)1-a}∊r ⋄  a t+←(r×dt)dt                  ⍝ time increment and accumulators
+        p←(⊃⍒)⍤1↑[-÷2]a ⋄ f←(⊢≥flip*⍨?⍤≠⍨)p⊃⍤0 1↑[-÷2]a                      ⍝ parents and cells to flip
+        o←(⍴o)⍴(f/⍥,p⊃⍤0 1↑[-÷2]n2)@((,f)⍨),o                                ⍝ update orientations
+        a←a×(⊂×g.(N21⍤N1))~f ⋄ ⍺⍺ o a t T                                    ⍝ reset accumulators and run callback
+    }
+    S←{t T←⍺+(2⊃⍵)0 ⋄ t(M T)CB STEP⍣{t≤2⊃⍵}(3↑⍵),T}
+    ⊃S/(⌽⍵),⊂CB o 0 0(⊃⌽⊃⍵)
+}

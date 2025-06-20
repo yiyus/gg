@@ -1,0 +1,18 @@
+:Namespace VonNewmann
+    A←×⍨                           ⍝ area of square
+    u←↓⍉↑(0 1)(1 0)(0 1)(1 0)      ⍝ unit vectors nw n ne e se s sw w
+    N1←{(1⌽⍵)(1⊖⍵)}                ⍝ e s (from o)
+    N2←{(N1 ⍵),(¯1⌽⍵)(¯1⊖⍵)}       ⍝ e s w n (from o)
+    N21←{e s←⍵ ⋄ ⍵,(¯2⌽e)(¯2⊖s)}   ⍝ nw n ne e se s sw w (from n1=e se s sw)
+    D21←{e s←⍵ ⋄ ⍵,(¯1⌽e)(¯1⊖s)}   ⍝ dnw dn dne de dse ds dsw dw (from d1=de dse ds dsw)
+    T2←{
+        o(de ds)←⍵ ⍝ (4) ⋄ _←⍵⍵
+        dsw dss dse←o∘⍵⍵¨(1⊖¯1⌽o)(2⊖o)(1⊖1⌽o)
+        tr[3]←⊂⍺[3;]⍺⍺ 1⊖¨dse dss dsw 0
+        tr[1]←⊂⍺[1;]⍺⍺ ¯1⊖¨(¯1⊖¯1⌽dse)(¯2⊖dss)(¯1⊖1⌽dsw)0
+        dee←o ⍵⍵ 2⌽o
+        tr[0]←⊂⍺[0;]⍺⍺ ¯1⌽¨0 dsw(¯2⌽dee)(¯1⊖¯1⌽dse)
+        tr[3]←⊂⍺[3;]⍺⍺ 1⌽¨0(¯1⊖1⌽dsw)dee dse
+        tr
+    }
+:EndNamespace

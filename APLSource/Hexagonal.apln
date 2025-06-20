@@ -1,0 +1,21 @@
+:Namespace Hexagonal
+    A←(2÷⍨3×3*÷2)××⍨                                ⍝ area of hexagon
+    u←↓⍉↑2÷⍨(4 0)(1 3)(1 3)(4 0)(1 3)(1 3)*÷2       ⍝ unit vectors e se s w nw n
+    N1←{(1⌽⍵)(1⊖1⌽⍵)(1⊖⍵)}                          ⍝ e se s (from o)
+    N2←{(N1 ⍵),(¯1⌽⍵)(¯1⊖¯1⌽⍵)(¯1⊖⍵)}               ⍝ e se s w nw n (from o)
+    N21←{e se s←⍵ ⋄ ⍵,(¯2⌽e)(¯2⊖¯2⌽se)(¯2⊖s)}       ⍝ e se s w nw n (from n1=e se s)
+    D21←{e se s←⍵ ⋄ ⍵,(¯1⌽e)(¯1⊖¯1⌽se)(¯1⊖s)}       ⍝ de dse ds dw dnw dn (from d1=de dse ds)
+    T2←{
+        o(de dse ds)←⍵ ⍝ (4)
+        dsee dssee dsse←o∘⍵⍵¨(1⊖2⌽o)(2⊖2⌽o)(2⊖1⌽o)
+        tr[4]←⊂⍺[4;]⍺⍺ ¯1⊖¨¯1⌽¨dsee dssee dsse ds 0 de
+        tr[1]←⊂⍺[1;]⍺⍺ 1⊖¨1⌽¨(¯1⊖¯2⌽dsee)(¯2⊖¯2⌽dssee)(¯2⊖¯1⌽dsse)(¯1⊖ds)0(¯1⌽de)
+        dsw dse dss←o∘⍵⍵¨(1⊖¯1⌽o)(1⊖1⌽o)(2⊖o)
+        tr[2]←⊂⍺[2;]⍺⍺ ¯1⊖¨dse dsse dss dsw(¯1⌽de)0
+        tr[5]←⊂⍺[5;]⍺⍺ 1⊖¨(¯1⊖¯1⌽dse)(¯2⊖¯1⌽dsse)(¯2⊖dss)(¯1⊖1⌽dsw)de 0
+        dee←o ⍵⍵ 2⌽o
+        tr[0]←⊂⍺[0;]⍺⍺ ¯1⌽¨de dsee dse 0(¯1⊖1⌽dsw)(¯1⊖ds)
+        tr[3]←⊂⍺[3;]⍺⍺ 1⌽¨(¯1⌽de)(¯1⊖¯2⌽dsee)(¯1⊖¯1⌽dse)0 dsw ds
+        tr
+    }
+:EndNamespace

@@ -1,0 +1,24 @@
+:Namespace Moore
+    A←×⍨                                                    ⍝ area of square
+    u←↓⍉↑2÷⍨(2 2)(0 4)(2 2)(4 0)(2 2)(0 4)(2 2)(4 0)*÷2     ⍝ unit vectors nw n ne e se s sw w
+    N1←{(1⌽⍵)(1⊖1⌽⍵)(1⊖⍵)(1⊖¯1⌽⍵)}                          ⍝ e se s sw (from o)
+    N2←{(¯1⊖¯1⌽⍵)(¯1⊖⍵)(¯1⊖1⌽⍵),(N1 ⍵),⊂¯1⌽⍵}               ⍝ nw n ne e se s sw w (from o)
+    N21←{e se s sw←⍵ ⋄ (¯2⊖¯2⌽se)(¯2⊖s)(¯2⊖2⌽sw),⍵,⊂¯2⌽e}   ⍝ nw n ne e se s sw w (from n1=e se s sw)
+    D21←{e se s sw←⍵ ⋄ (¯1⊖¯1⌽se)(¯1⊖s)(¯1⊖1⌽sw),⍵,⊂¯1⌽e}   ⍝ dnw dn dne de dse ds dsw dw (from d1=de dse ds dsw)
+    T2←{
+        o(de dse ds dsw)←⍵ ⍝ (4)
+        dee dsee dssee dsse dss←o∘⍵⍵¨(2⌽o)(1⊖2⌽o)(2⊖2⌽o)(2⊖1⌽o)(2⊖o) ⍝ (9)
+        tr[0]←⊂⍺[0;]⍺⍺ ¯1⊖¨¯1⌽¨0 de dee dsee dssee dsse dss ds
+        tr[4]←⊂⍺[4;]⍺⍺ 1⊖¨1⌽¨0(¯1⌽de)(¯2⌽dee)(¯1⊖¯2⌽dsee)(¯2⊖¯2⌽dssee)(¯2⊖¯1⌽dsse)(¯2⊖dss)(¯1⊖ds)
+        dssw←o ⍵⍵ 2⊖¯1⌽o ⍝ - ssee (9)
+        tr[1]←⊂⍺[1;]⍺⍺ ¯1⊖¨(¯1⌽de)0 de dse dsse dss dssw dsw
+        tr[5]←⊂⍺[5;]⍺⍺ 1⊖¨de 0(¯1⌽de)(¯1⊖¯1⌽dse)(¯2⊖¯1⌽dsse)(¯2⊖dss)(¯2⊖1⌽dssw)(¯1⊖1⌽dsw)
+        dsww←o ⍵⍵ 1⊖¯2⌽o ⍝ - sse (9)
+        tr[7]←⊂⍺[7;]⍺⍺ ¯1⌽¨(¯1⊖ds)(¯1⊖1⌽dsw)(¯1⊖2⌽dsww)dee dsee dse ds 0
+        tr[3]←⊂⍺[3;]⍺⍺ 1⌽¨ds dsw dsww(¯2⌽dee)(¯1⊖¯2⌽dsee)(¯1⊖¯1⌽dse)(¯1⊖ds)0
+        dssww←o ⍵⍵ 2⊖¯2⌽o ⍝ - sw se see (7)
+        tr[2]←⊂⍺[2;]⍺⍺ ¯1⊖¨1⌽¨(¯2⌽dee)(¯1⌽de)0 ds dss dssw dssww dsww
+        tr[6]←⊂⍺[6;]⍺⍺ 1⊖¨¯1⌽¨dee de 0(¯1⊖ds)(¯2⊖dss)(¯2⊖1⌽dssw)(¯2⊖2⌽dssww)(¯1⊖2⌽dsww)
+        tr
+    }
+:EndNamespace

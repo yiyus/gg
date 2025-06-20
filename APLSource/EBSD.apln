@@ -1,0 +1,36 @@
+:Namespace EBSD                                                      ⍝ Read and write ang files
+    Read←{'.ctf'≡⍥⎕C ¯4↑⍵: Ctf ⍵ ⋄ Ang ⍵}
+    Ang←{                                                            ⍝ read ang file
+        (h l)←((2-'#'=⊃¨)⊆⊢)⊃⎕NGET⍵1                                 ⍝   get (hash) comments and data
+        c←⎕CSV⍠2⊢('(^\s+)|(\s+$)' '\s+'⎕R'' ','⊢l)'N'2 0             ⍝   format data and read as csv
+        e←⎕NS⍬ ⋄ e.h←h ⋄ e.ea←↓⍉↑c[⍳3]                               ⍝   return namespace
+        e.(x y ci iq p)←c[4 3 6 5 9] ⋄ e.ext←'ang'
+        e.C←{⍉↑(↓⍉↑ea),y x iq ci 0 0 0} ⋄ e
+    }
+    Ctf←{                                                            ⍝ read ctf file
+        R←{⊃⎕CSV(⊃↓/⍵.(Offsets,⊂Match))'S' 2}                        ⍝   read numeric value
+        S←{⊃('^',⍺,'Step\s+(.*)')⎕S R ⍵}                             ⍝   step size from line
+        l←(⎕UCS 10)(≠⊆⊢)80 ¯1⎕MAP ⍵ 'R' ⋄ x←y←0                      ⍝   read lines
+        b←{'XStep'≡5↑⍵:0⊣x⊢←'X'S ⍵ ⋄ 'YStep'≡5↑⍵:0⊣y⊢←'Y'S ⍵         ⍝   read size
+            ∧/⍵∊⎕D,' .-',⎕UCS 9}¨l~¨⎕UCS 13                          ⍝   lines with only digits
+        c←⎕CSV⍠2⊢('(^\s+)|(\s+$)' '\s+'⎕R'' ','⊢b/l~¨⎕UCS 13)'N' 2 0 ⍝   read as csv
+        e←⎕NS⍬ ⋄ e.h←(l/⍨~b) ⋄ e.ext←'ctf' ⋄ e.ea←180÷⍨○↓⍉↑c[5+⍳3]   ⍝   return namespace
+        e.(x y)←x y×c[1 2] ⋄ e.(ci iq)←c[8 9]
+        e.C←{⍉↑÷∘(1⊃x)@1 2⊢0 x y 0 0,((180÷○1)×↓⍉↑ea),ci iq} ⋄ e
+    }
+    Crop←{                                                           ⍝ crop defined region
+        (a b x y)←⍺ ⋄ (x y)←1e99@(=∘0)x y                            ⍝   default limits are 0 0 1e99 1e99
+        e⊣(e←⎕NS ⍵).(ea x y iq ci)/⍨←⊂((a∘≤∧x∘>)⍵.x)∧(b∘≤∧y∘>)⍵.y    ⍝   select points between limits
+    }
+    Write←{                                                          ⍝ write comments and data to file
+        f←⍵,'.',⍺.ext                                                ⍝   file name
+        f⊣f 1⎕NPUT⍨⊂⍺.h,(⍺.C⍬)⎕CSV⍠2⍠'Separator' ' '⊢'' 'N'          ⍝   write header and data
+    }
+    Orientations←{                                                   ⍝ get orientations
+        ⍵.d←⍵.x⌊⍥(⌈/⍤|2-/⊢)⍵.y
+        nx←⌊0.5+1+((⌈/-⌊/)⍵.x)÷⍵.d ⋄ ny←⌊0.5+(≢⍵.x)÷nx               ⍝   find size
+        ⍵.g←∪ea←(a←○⍺÷180)(⌊0.5+÷⍨)⍣(⍺>0)⊢(○2)|⍵.ea                  ⍝   unique euler angles
+        (a×⍣(⍺>0)⊢⍵.g)(nx ny⍴⍵.g⍳ea)                                 ⍝   return angles and indices
+    }
+    Diameter←{2×(⍵÷○1)*÷2}∘{(⍳2)×.((≢,⍵){⍺⍺÷1⌈+/,⍵≠1⌽[⍺]⍵})⊂⍵}       ⍝ grain diameter (in cells)
+:EndNamespace
