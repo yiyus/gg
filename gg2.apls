@@ -71,52 +71,55 @@
     Diameter←{2×(⍵÷○1)*÷2}∘{(⍳2)×.((≢,⍵){⍺⍺÷1⌈+/,⍵≠1⌽[⍺]⍵})⊂⍵}       ⍝ grain diameter (in cells)
 :EndNamespace
 
+:Namespace Moore
+    u←↓⍉↑2÷⍨(2 2)(0 4)(2 2)(4 0)(2 2)(0 4)(2 2)(4 0)*÷2     ⍝ unit vectors nw n ne e se s sw w
+    N1←{(1⌽⍵)(1⊖1⌽⍵)(1⊖⍵)(1⊖¯1⌽⍵)}                          ⍝ e se s sw (from o)
+    N2←{(¯1⊖¯1⌽⍵)(¯1⊖⍵)(¯1⊖1⌽⍵),(N1 ⍵),⊂¯1⌽⍵}               ⍝ nw n ne e se s sw w (from o)
+    N21←{e se s sw←⍵ ⋄ (¯2⊖¯2⌽se)(¯2⊖s)(¯2⊖2⌽sw),⍵,⊂¯2⌽e}   ⍝ nw n ne e se s sw w (from n1=e se s sw)
+    D21←{e se s sw←⍵ ⋄ (¯1⊖¯1⌽se)(¯1⊖s)(¯1⊖1⌽sw),⍵,⊂¯1⌽e}   ⍝ dnw dn dne de dse ds dsw dw (from d1=de dse ds dsw)
+    T2←{
+        o(de dse ds dsw)←⍵ ⍝ (4)
+        dee dsee dssee dsse dss←o∘⍵⍵¨(2⌽o)(1⊖2⌽o)(2⊖2⌽o)(2⊖1⌽o)(2⊖o) ⍝ (9)
+        tr[0]←⊂⍺[0;]⍺⍺ ¯1⊖¨¯1⌽¨0 de dee dsee dssee dsse dss ds
+        tr[4]←⊂⍺[4;]⍺⍺ 1⊖¨1⌽¨0(¯1⌽de)(¯2⌽dee)(¯1⊖¯2⌽dsee)(¯2⊖¯2⌽dssee)(¯2⊖¯1⌽dsse)(¯2⊖dss)(¯1⊖ds)
+        dssw←o ⍵⍵ 2⊖¯1⌽o ⍝ - ssee (9)
+        tr[1]←⊂⍺[1;]⍺⍺ ¯1⊖¨(¯1⌽de)0 de dse dsse dss dssw dsw
+        tr[5]←⊂⍺[5;]⍺⍺ 1⊖¨de 0(¯1⌽de)(¯1⊖¯1⌽dse)(¯2⊖¯1⌽dsse)(¯2⊖dss)(¯2⊖1⌽dssw)(¯1⊖1⌽dsw)
+        dsww←o ⍵⍵ 1⊖¯2⌽o ⍝ - sse (9)
+        tr[7]←⊂⍺[7;]⍺⍺ ¯1⌽¨(¯1⊖ds)(¯1⊖1⌽dsw)(¯1⊖2⌽dsww)dee dsee dse ds 0
+        tr[3]←⊂⍺[3;]⍺⍺ 1⌽¨ds dsw dsww(¯2⌽dee)(¯1⊖¯2⌽dsee)(¯1⊖¯1⌽dse)(¯1⊖ds)0
+        dssww←o ⍵⍵ 2⊖¯2⌽o ⍝ - sw se see (7)
+        tr[2]←⊂⍺[2;]⍺⍺ ¯1⊖¨1⌽¨(¯2⌽dee)(¯1⌽de)0 ds dss dssw dssww dsww
+        tr[6]←⊂⍺[6;]⍺⍺ 1⊖¨¯1⌽¨dee de 0(¯1⊖ds)(¯2⊖dss)(¯2⊖1⌽dssw)(¯2⊖2⌽dssww)(¯1⊖2⌽dsww)
+        tr
+    }
+:EndNamespace
+
 _SIM_←{
-    o q ddis lagb hagb G0 M0 Qg A n flip f3 f4 fg dtmin kmodel dx←⍺
+    o q ddis lagb hagb G0 M0 Qg A n flip f3 f4 fg dtmin kmodel dx g←⍺
     CB←⍺⍺ ⋄ LF←⍵⍵
-    N1←{(1⌽⍵)(1⊖1⌽⍵)(1⊖⍵)(1⊖¯1⌽⍵)}                              ⍝ e se s sw (from o)
-    N2←{(¯1⊖¯1⌽⍵)(¯1⊖⍵)(¯1⊖1⌽⍵),(N1 ⍵),⊂¯1⌽⍵}                   ⍝ nw n ne e se s sw w (from o)
-    N21←{e se s sw←⍵ ⋄ (¯2⊖¯2⌽se)(¯2⊖s)(¯2⊖2⌽sw),⍵,⊂¯2⌽e}       ⍝ nw n ne e se s sw w (from n1=e se s sw)
-    D21←{e se s sw←⍵ ⋄ (¯1⊖¯1⌽se)(¯1⊖s)(¯1⊖1⌽sw),⍵,⊂¯1⌽e}       ⍝ nw n ne e se s sw w (from d1=de dse ds dsw)
-    u←↓⍉↑|(⊢÷(÷2)*⍨+.×⍨¨)(1 ¯1)(0 ¯1)(¯1 ¯1)(¯1 0)(¯1 1)(0 1)(1 1)(1 0)      ⍝ unit vectors nw n ne e se s sw w
     mis←ddis Euler.M q ⋄ DL←mis.DL ⋄ D←(h←DL 180÷⍨○hagb)⌊mis.M               ⍝ disorientations
-    TE←{⊃(1-⍺×1-fg)+.×⌷∘g¨¨⍵}                                                ⍝ transformation energy
+    TE←{⊃(1-⍺×1-fg)+.×⌷∘g0¨¨⍵}                                               ⍝ transformation energy
     M←M0 Qg A n∘(h{m q a n←⍺ ⋄ (m×*-q÷8.314×⍵)×1-*-a×n*⍨⍺⍺÷⍨⍳1+⍺⍺})          ⍝ boundary mobility
-    g←G0∘{(⍺×⊢×1-⍟)@(0∘<)¨1⌊⍵÷⍨⍳1+⍵}h                                        ⍝ boundary energy
-    k←kmodel÷8××⍨dx ⋄ l←DL 180÷⍨○lagb
+    g0←G0∘{(⍺×⊢×1-⍟)@(0∘<)¨1⌊⍵÷⍨⍳1+⍵}h                                       ⍝ boundary energy
+    k←kmodel÷(≢g.u)××⍨dx ⋄ l←DL 180÷⍨○lagb ⋄ g.tr←(≢⊃g.u)⍴⊂(⍴o)⍴0
     STEP←{
-        dt m←⍺ ⋄ o a t T←⍵ ⋄ dt-←t ⋄ dt≤0: o a t T ⋄ TL←{⍵+LF o ⍵ T t}TE
-        b2 nn←{(∘.=⍨⍵)(3⌊1-⍨≢∘∪¨⊃,¨/⍵)}n2←N21⊢n1←N1 o
-        f2 g2 m2←{(⍵∘.(∊¨)N2⊃,¨/⍵)(⊃+/⌷∘g¨¨⍵)(⌷∘m¨¨⍵)}D21⊢d1←(⊂o)D¨n1
-        de dse ds dsw←d1 ⍝ (4)
-        dee dsee dssee dsse dss←o∘D¨(2⌽o)(1⊖2⌽o)(2⊖2⌽o)(2⊖1⌽o)(2⊖o) ⍝ (9)
-        tnw←f2[0;]TL ¯1⊖¨¯1⌽¨0 de dee dsee dssee dsse dss ds
-        tse←f2[4;]TL 1⊖¨1⌽¨0(¯1⌽de)(¯2⌽dee)(¯1⊖¯2⌽dsee)(¯2⊖¯2⌽dssee)(¯2⊖¯1⌽dsse)(¯2⊖dss)(¯1⊖ds)
-        dssw←o D 2⊖¯1⌽o ⍝ - ssee (9)
-        tn←f2[1;]TL ¯1⊖¨(¯1⌽de)0 de dse dsse dss dssw dsw
-        ts←f2[5;]TL 1⊖¨de 0(¯1⌽de)(¯1⊖¯1⌽dse)(¯2⊖¯1⌽dsse)(¯2⊖dss)(¯2⊖1⌽dssw)(¯1⊖1⌽dsw)
-        dsww←o D 1⊖¯2⌽o ⍝ - sse (9)
-        tw←f2[7;]TL ¯1⌽¨(¯1⊖ds)(¯1⊖1⌽dsw)(¯1⊖2⌽dsww)dee dsee dse ds 0
-        te←f2[3;]TL 1⌽¨ds dsw dsww(¯2⌽dee)(¯1⊖¯2⌽dsee)(¯1⊖¯1⌽dse)(¯1⊖ds)0
-        dssww←o D 2⊖¯2⌽o ⍝ - sw se see (7)
-        tne←f2[2;]TL ¯1⊖¨1⌽¨(¯2⌽dee)(¯1⌽de)0 ds dss dssw dssww dsww
-        tsw←f2[6;]TL 1⊖¨¯1⌽¨dee de 0(¯1⊖ds)(¯2⊖dss)(¯2⊖1⌽dssw)(¯2⊖2⌽dssww)(¯1⊖2⌽dsww)
-        k2←(÷2)*⍨⊃+.×⍨+/¨u×⍤1¨⊂b2
-        r←k×(⊂0 1 f3 f4[nn])×k2×m2×0⌈(⊂g2)-tnw tn tne te tse ts tsw tw   ⍝ transformation rates
-        dt←{dt⌊dtmin⌈⌊/⍵÷⍨⍥((⍵>0)/∊)1-a}∊r                               ⍝ time increment
-        a t+←(r×dt)dt                                                    ⍝ accumulators
-        p←(⊃⍒)⍤1↑[-÷2]a                                                  ⍝ parents
-        f←(⊢≥flip*⍨?⍤≠⍨)p⊃⍤0 1↑[-÷2]a                                    ⍝ cells to flip
-        o←(⍴o)⍴(f/⍥,p⊃⍤0 1↑[-÷2]n2)@((,f)⍨),o                            ⍝ update orientations
-        a←a×(⊂×N21⍤N1)~f                                                 ⍝ reset accumulators
-        ⍺⍺ o a t T
+        dt m0←⍺ ⋄ o a t T←⍵ ⋄ dt-←t ⋄ dt≤0: o a t T ⋄ TL←{⍵+LF o ⍵ T t}TE
+        b2 nn←{(∘.=⍨⍵)(3⌊1-⍨≢∘∪¨⊃,¨/⍵)}n2←g.N21⊢n1←g.N1 o                    ⍝ boundaries and number of neighbours
+        f2 g2 m2←{(⍵∘.(∊¨)g.N2⊃,¨/⍵)(⊃+/⌷∘g0¨¨⍵)(⌷∘m0¨¨⍵)}g.D21⊢d1←(⊂o)D¨n1  ⍝ support, energy and mobility
+        k2←k×(⊂0 1 f3 f4[nn])×(÷2)*⍨⊃+.×⍨+/¨g.u×⍤1¨⊂b2                       ⍝ combined factor
+        r←k2×m2×0⌈(⊂g2)-f2 TL g.T2 D o d1                                    ⍝ transformation rates
+        dt←{dt⌊dtmin⌈⌊/⍵÷⍨⍥((⍵>0)/∊)1-a}∊r ⋄  a t+←(r×dt)dt                  ⍝ time increment and accumulators
+        p←(⊃⍒)⍤1↑[-÷2]a ⋄ f←(⊢≥flip*⍨?⍤≠⍨)p⊃⍤0 1↑[-÷2]a                      ⍝ parents and cells to flip
+        o←(⍴o)⍴(f/⍥,p⊃⍤0 1↑[-÷2]n2)@((,f)⍨),o                                ⍝ update orientations
+        a←a×(⊂×g.(N21⍤N1))~f ⋄ ⍺⍺ o a t T                                    ⍝ reset accumulators and run callback
     }
     S←{t T←⍺+(2⊃⍵)0 ⋄ t(M T)CB STEP⍣{t≤2⊃⍵}(3↑⍵),T}
     ⊃S/(⌽⍵),⊂CB o 0 0(⊃⌽⊃⍵)
 }
 
 SIM←{
-    0::⎕SIGNAL ⎕EN
+    ⍝0::⎕SIGNAL ⎕EN
     CUT←(1 1↓¯1 ¯1↓⊢)⍣⍺.edge
     EDGE←{m n←(⍴o←⍵)-1 ⋄ o[0 m;]←o[2(m-2);] ⋄ o[;0 n]←o[;2(n-2)] ⋄ o}⍣⍺.edge
     N2←(,2-⍳3 3){a b←⍺ ⋄ a⊖b⌽⍵}¨⊂
@@ -150,7 +153,7 @@ SIM←{
         t←+\⍺{(⍺|⍵),⍨⍣(0≠⍺|⍵)⊢⍺/⍨⌊⍵÷⍺}⊃⌽w←+\⊃¨⍵                                  ⍝   time steps
         ↓⍉↑(-2-/0,{⍵[⍋⍵]}∪t,w)((⊃∘⌽¨⍵)[0,¯1↓(0,w)⍸{⍵[⍋⍵]}∪t,w])                  ⍝   temp at each step
     },⊆⍵
-    to←0 ⋄ o a t T←w CB _SIM_ LF⍨o q,⍺.(ddis lagb hagb G0 M0 Qg A n flip f3 f4 fg dtmin kmodel dx)
+    to←0 ⋄ o a t T←w CB _SIM_ LF⍨o q,⍺.(ddis lagb hagb G0 M0 Qg A n flip f3 f4 fg dtmin kmodel dx),Moore
     to←t-⍺.tout ⋄ _←⍺.out{(Euler.EA↓⍉↑⍵)⎕CSV⍠'IfExists' 'Replace'⊢⍺,'_ea.csv'}⍣(0∊⍴e)⊢q
     (CUT⊃CB⍣(0≠⍺.tout|⊃⌽⊃⌽w)⊢o a t T)td
 }
