@@ -7,12 +7,12 @@
     grid: "VonNewmann",                // grid: 4 neighbours
     grid: "Hexagonal",                 // grid: 6 neighbours
     grid: "Moore",                     // grid: 8 neighbours
+    edge: 1,                           // grid: edge (1) or periodic (0)
+    dx: 0.1e-6,                        // grid: cell size (0 to read from ebsd file)
     crop: [0.5e-6,0.5e-6,3e-6,3e-6],   // ebsd: crop region
     ci: 1e-2,                          // ebsd: confidence index
     iq: 1e2,                           // ebsd: image quality
     dang: 1,                           // ebsd: angular resolution (degrees)
-    edge: 1,                           // microstructure: edge (1) or periodic (0)
-    dx: 0.1e-6,                        // microstructure: cell size
     lagb: 5,                           // resolution: low angle grain boudary (degrees)
     hagb: 15,                          // resolution: high angle grain boudary (degrees)
     ddis: 0.5,                         // resolution: disorientations angular resolution (degrees)
