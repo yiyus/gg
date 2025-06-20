@@ -51,7 +51,7 @@
             ∧/⍵∊⎕D,' .-',⎕UCS 9}¨l~¨⎕UCS 13                          ⍝   lines with only digits
         c←⎕CSV⍠2⊢('(^\s+)|(\s+$)' '\s+'⎕R'' ','⊢b/l~¨⎕UCS 13)'N' 2 0 ⍝   read as csv
         e←⎕NS⍬ ⋄ e.h←(l/⍨~b) ⋄ e.ext←'ctf' ⋄ e.ea←180÷⍨○↓⍉↑c[5+⍳3]   ⍝   return namespace
-        _←⎕SIGNAL(x≠y)/11  ⋄ e.(x y)←x y×c[1 2] ⋄ e.(ci iq)←c[8 9]
+        e.(x y)←x y×c[1 2] ⋄ e.(ci iq)←c[8 9]
         e.C←{⍉↑÷∘(1⊃x)@1 2⊢0 x y 0 0,((180÷○1)×↓⍉↑ea),ci iq} ⋄ e
     }
     Crop←{                                                           ⍝ crop defined region
@@ -72,11 +72,12 @@
 :EndNamespace
 
 :Namespace Hexagonal
+    A←(2÷⍨3×3*÷2)××⍨                                ⍝ area of hexagon
     u←↓⍉↑2÷⍨(4 0)(1 3)(1 3)(4 0)(1 3)(1 3)*÷2       ⍝ unit vectors e se s w nw n
     N1←{(1⌽⍵)(1⊖1⌽⍵)(1⊖⍵)}                          ⍝ e se s (from o)
     N2←{(N1 ⍵),(¯1⌽⍵)(¯1⊖¯1⌽⍵)(¯1⊖⍵)}               ⍝ e se s w nw n (from o)
     N21←{e se s←⍵ ⋄ ⍵,(¯2⌽e)(¯2⊖¯2⌽se)(¯2⊖s)}       ⍝ e se s w nw n (from n1=e se s)
-    D21←{e se s sw←⍵ ⋄ ⍵,(¯1⌽e)(¯1⊖¯1⌽se)(¯1⊖s)}    ⍝ de dse ds dw dnw dn (from d1=de dse ds)
+    D21←{e se s←⍵ ⋄ ⍵,(¯1⌽e)(¯1⊖¯1⌽se)(¯1⊖s)}       ⍝ de dse ds dw dnw dn (from d1=de dse ds)
     T2←{
         o(de dse ds)←⍵ ⍝ (4)
         dsee dssee dsse←o∘⍵⍵¨(1⊖2⌽o)(2⊖2⌽o)(2⊖1⌽o)
@@ -93,6 +94,7 @@
 :EndNamespace
 
 :Namespace Moore
+    A←×⍨                                                    ⍝ area of square
     u←↓⍉↑2÷⍨(2 2)(0 4)(2 2)(4 0)(2 2)(0 4)(2 2)(4 0)*÷2     ⍝ unit vectors nw n ne e se s sw w
     N1←{(1⌽⍵)(1⊖1⌽⍵)(1⊖⍵)(1⊖¯1⌽⍵)}                          ⍝ e se s sw (from o)
     N2←{(¯1⊖¯1⌽⍵)(¯1⊖⍵)(¯1⊖1⌽⍵),(N1 ⍵),⊂¯1⌽⍵}               ⍝ nw n ne e se s sw w (from o)
@@ -117,6 +119,7 @@
 :EndNamespace
 
 :Namespace VonNewmann
+    A←×⍨                           ⍝ area of square
     u←↓⍉↑(0 1)(1 0)(0 1)(1 0)      ⍝ unit vectors nw n ne e se s sw w
     N1←{(1⌽⍵)(1⊖⍵)}                ⍝ e s (from o)
     N2←{(N1 ⍵),(¯1⌽⍵)(¯1⊖⍵)}       ⍝ e s w n (from o)
@@ -141,7 +144,7 @@ _SIM_←{
     TE←{⊃(1-⍺×1-fg)+.×⌷∘g0¨¨⍵}                                               ⍝ transformation energy
     M←M0 Qg A n∘(h{m q a n←⍺ ⋄ (m×*-q÷8.314×⍵)×1-*-a×n*⍨⍺⍺÷⍨⍳1+⍺⍺})          ⍝ boundary mobility
     g0←G0∘{(⍺×⊢×1-⍟)@(0∘<)¨1⌊⍵÷⍨⍳1+⍵}h                                       ⍝ boundary energy
-    k←kmodel÷(≢g.u)××⍨dx ⋄ l←DL 180÷⍨○lagb ⋄ g.tr←(≢⊃g.u)⍴⊂(⍴o)⍴0
+    k←kmodel÷(≢g.u)×g.A dx ⋄ l←DL 180÷⍨○lagb ⋄ g.tr←(≢⊃g.u)⍴⊂(⍴o)⍴0
     STEP←{
         dt m0←⍺ ⋄ o a t T←⍵ ⋄ dt-←t ⋄ dt≤0: o a t T ⋄ TL←{⍵+LF o ⍵ T t}TE
         b2 nn←{(∘.=⍨⍵)(3⌊1-⍨≢∘∪¨⊃,¨/⍵)}n2←g.N21⊢n1←g.N1 o                    ⍝ boundaries and number of neighbours
@@ -158,7 +161,7 @@ _SIM_←{
 }
 
 SIM←{
-    ⍝0::⎕SIGNAL ⎕EN
+    0::⎕SIGNAL ⎕EN
     CUT←(1 1↓¯1 ¯1↓⊢)⍣⍺.edge
     EDGE←{m n←(⍴o←⍵)-1 ⋄ o[0 m;]←o[2(m-2);] ⋄ o[;0 n]←o[;2(n-2)] ⋄ o}⍣⍺.edge
     N2←(,2-⍳3 3){a b←⍺ ⋄ a⊖b⌽⍵}¨⊂
@@ -179,7 +182,7 @@ SIM←{
         to⊢←t ⋄ o a t T⊣1 PRT(WRT o to),' ',⍕≢,c                                 ⍝   write output
     }
     LF←⍺∘{o tg T t←⍵                                                             ⍝ local field
-        ∆tg←⍺.(wkt×1.380649e¯23÷×⍨dx)×T×1-2×?≠⍨tg ⋄ ∆tg ⋄ 0∊⍴e:∆tg               ⍝   thermal noise
+        ∆tg←⍺.wkt×(1.380649e¯23÷g.A ⍺.dx)×T×1-2×?≠⍨tg ⋄ ∆tg ⋄ 0∊⍴e:∆tg           ⍝   thermal noise
         ∆tg←⍺{⍵+⍺.wci×(1-e.ci⍴⍨⍴o)×1-2×?≠⍨⍵}⍣(⍺.wci>0)⊢tg                        ⍝   ci noise
         ⍺{⍵+⍺.iq×g×(⍴o)⍴1-(⊢÷⌈/)e.iq}⍣(⍺.iq>0)⊢∆tg                               ⍝   iq push
     }
@@ -192,7 +195,8 @@ SIM←{
         t←+\⍺{(⍺|⍵),⍨⍣(0≠⍺|⍵)⊢⍺/⍨⌊⍵÷⍺}⊃⌽w←+\⊃¨⍵                                  ⍝   time steps
         ↓⍉↑(-2-/0,{⍵[⍋⍵]}∪t,w)((⊃∘⌽¨⍵)[0,¯1↓(0,w)⍸{⍵[⍋⍵]}∪t,w])                  ⍝   temp at each step
     },⊆⍵
-    to←0 ⋄ o a t T←w CB _SIM_ LF⍨o q,⍺.(ddis lagb hagb G0 M0 Qg A n flip f3 f4 fg dtmin kmodel dx),Moore
+    ~(⊂⍺.grid)∊'Moore' 'VonNewmann' 'Hexagonal':⎕SIGNAL 6 ⋄ g←⍎⍺.grid
+    to←0 ⋄ o a t T←w CB _SIM_ LF⍨o q,⍺.(ddis lagb hagb G0 M0 Qg A n flip f3 f4 fg dtmin kmodel dx),g
     to←t-⍺.tout ⋄ _←⍺.out{(Euler.EA↓⍉↑⍵)⎕CSV⍠'IfExists' 'Replace'⊢⍺,'_ea.csv'}⍣(0∊⍴e)⊢q
     (CUT⊃CB⍣(0≠⍺.tout|⊃⌽⊃⌽w)⊢o a t T)td
 }

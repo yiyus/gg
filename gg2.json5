@@ -4,6 +4,9 @@
     input: 10,                         // input: r for raious
     input: [20,20,10],                 // input: w h n for random
     input: "dc06.ctf",                 // input: filename
+    grid: "VonNewmann",                // grid: 4 neighbours
+    grid: "Hexagonal",                 // grid: 6 neighbours
+    grid: "Moore",                     // grid: 8 neighbours
     crop: [0.5e-6,0.5e-6,3e-6,3e-6],   // ebsd: crop region
     ci: 1e-2,                          // ebsd: confidence index
     iq: 1e2,                           // ebsd: image quality
@@ -27,7 +30,7 @@
     Qg: 140e3,                         // physics: humphrey's activation energy
     A: 5,                              // physics: humphrey's factor
     n: 4,                              // physics: humphrey's exponent
-    verbose: 1,                        // options: print time and diameter
+    verbose: 2,                        // options: nothing 0, files 1, also time and diameter >1
     process:[                          // process: time and temperature
         [250,   750],
         [250,   800],
