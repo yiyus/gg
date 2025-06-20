@@ -40,7 +40,7 @@ This model incorporates a sophisticated set of features to achieve a balance bet
 
     * *Thermal Energy:* Adds a deterministic driving force for recrystallization
     
-    $$\Delta\gamma_T=w_T\frac{k T}A_c \xi(-1,1)$$
+    $$\Delta\gamma_T=w_T\frac{k T}{A_c}\xi(-1,1)$$
 
     * *Image Quality:* Higher energy push at cells with more deffects (more image quality, also related with stored energy)
     

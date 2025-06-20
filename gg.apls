@@ -1,7 +1,7 @@
 #!/usr/local/bin/dyalogscript MAXWS=16G
 ⍝ grain growth cellular automata model jgl@dyalog.com 2025
 
-⎕IO←0 ⋄ ⎕RL←1 ⋄ config←'gg2.json5'
+⎕IO←0 ⋄ ⎕RL←1 ⋄ config←'gg.json5'
 
 ⎕FIX⊃⎕NGET'APLSource/Euler.apln'1
 ⎕FIX⊃⎕NGET'APLSource/EBSD.apln'1
