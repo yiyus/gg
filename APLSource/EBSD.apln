@@ -5,7 +5,7 @@
         c←⎕CSV⍠2⊢('(^\s+)|(\s+$)' '\s+'⎕R'' ','⊢l)'N'2 0             ⍝   format data and read as csv
         e←⎕NS⍬ ⋄ e.h←h ⋄ e.ea←↓⍉↑c[⍳3]                               ⍝   return namespace
         e.(x y iq ci p)←c[3 4 5 6 9] ⋄ e.ext←'ang'
-        e.C←{⍉↑(↓⍉↑ea),y x iq ci 0 0 0} ⋄ e
+        e.C←{⍉↑(↓⍉↑ea),x y iq ci 0 0 0} ⋄ e
     }
     Ctf←{                                                            ⍝ read ctf file
         R←{⊃⎕CSV(⊃↓/⍵.(Offsets,⊂Match))'S' 2}                        ⍝   read numeric value
