@@ -29,8 +29,8 @@
     Orientations←{                                                   ⍝ get orientations
         ⍵.d←⍵.x⌊⍥(⌈/⍤|2-/⊢)⍵.y
         nx←⌊0.5+1+((⌈/-⌊/)⍵.x)÷⍵.d ⋄ ny←⌊0.5+(≢⍵.x)÷nx               ⍝   find size
-        ⍵.g←∪ea←(a←○⍺÷180)(⌊0.5+÷⍨)⍣(⍺>0)⊢(○2)|⍵.ea                  ⍝   unique euler angles
-        (a×⍣(⍺>0)⊢⍵.g)(nx ny⍴⍵.g⍳ea)                                 ⍝   return angles and indices
+        g←∪ea←(a←○⍺÷180)(⌊0.5+÷⍨)⍣(⍺>0)⊢(○2)|⍵.ea                    ⍝   unique euler angles
+        (⍵.g←a×⍣(⍺>0)⊢g)(nx ny⍴g⍳ea)                                 ⍝   return angles and indices
     }
     Diameter←{2×(⍵÷○1)*÷2}∘{(⍳2)×.((≢,⍵){⍺⍺÷1⌈+/,⍵≠1⌽[⍺]⍵})⊂⍵}       ⍝ grain diameter (in cells)
 :EndNamespace
