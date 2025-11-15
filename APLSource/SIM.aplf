@@ -17,7 +17,7 @@ SIM←{
         td⍪←{⍵⊣⎕←12 ¯6⍕⍵}⍣(⍺.verbose>1)⊢t T,⍺.dx×EBSD.Diameter c←CUT o           ⍝   time and diameter
         _←{⍵.Callback c(CUT¨a)t}⍣(0≠⊃⍺.⎕NC'Callback')⊢⍺                          ⍝   user callback
         o←EDGE o ⋄ t<to+⍺.tout:o a t T                                           ⍝   fix edge
-        to⊢←t ⋄ o a t T⊣1 PRT(WRT o to),' ',⍕≢,c                                 ⍝   write output
+        to⊢←t ⋄ o a t T⊣1 PRT(WRT (CUT o)to),' ',⍕≢,c                            ⍝   write output
     }
     LF←⍺∘{o tg T t←⍵                                                             ⍝ local field
         ∆tg←⍺.wkt×(1.380649e¯23÷g.A ⍺.dx)×T×1-2×?≠⍨tg ⋄ ∆tg ⋄ 0∊⍴e:∆tg           ⍝   thermal noise
