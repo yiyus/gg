@@ -4,7 +4,7 @@ SIM←{
     EDGE←{m n←(⍴o←⍵)-1 ⋄ o[0 m;]←o[2(m-2);] ⋄ o[;0 n]←o[;2(n-2)] ⋄ o}⍣⍺.edge
     N2←(,2-⍳3 3){a b←⍺ ⋄ a⊖b⌽⍵}¨⊂
     FIX←{v←⍵≥0 ⋄ ((~v)/⍥,⍵⌷⍨∘(⊃⍤⍒)⍤1⍥(↑[-÷2]N2)(?≠⍨⍵)×v×⊃(⊂⍵)+.=N2 ⍵)@(~v⍨)⊢⍵}⍣≡
-    CIRCLE←{o←(×⍨⍵)>+.×⍨¨(⍳2⍴s)+0.5(⊣-⊣×⊢)s←2×2×⍵ ⋄ q←(1 1 1 Euler.QAD 63.8)(4⍴0) ⋄ o q}
+    CIRCLE←{o←(×⍨⍵)>+.×⍨¨(⍳2⍴s)+0.5(⊣-×)s←2×2×⍵ ⋄ q←(1 1 1 Euler.QAD 63.8)(4⍴0) ⋄ o q}
     RANDOM←{w h n←⍵ ⋄ q←↓⍉↑Euler.RND n ⋄ o←?h w⍴n ⋄ o q}
     INPUT←{                                                                      ⍝ microstructure
         2|⎕DR ⍵:{1=≢⍵:CIRCLE ⍵ ⋄ 3=≢⍵: RANDOM ⍵}⍵                                ⍝   generate
@@ -20,9 +20,9 @@ SIM←{
         to⊢←t ⋄ o a t T⊣1 PRT(WRT (CUT o)to),' ',⍕≢,c                            ⍝   write output
     }
     LF←⍺∘{o tg T t←⍵                                                             ⍝ local field
-        ∆tg←⍺.wkt×(1.380649e¯23÷g.A ⍺.dx)×T×1-2×?≠⍨tg ⋄ ∆tg ⋄ 0∊⍴e:∆tg           ⍝   thermal noise
-        ∆tg←⍺{⍵+⍺.wci×(1-e.ci⍴⍨⍴o)×1-2×?≠⍨⍵}⍣(⍺.wci>0)⊢tg                        ⍝   ci noise
-        ⍺{⍵+⍺.iq×g×(⍴o)⍴1-(⊢÷⌈/)e.iq}⍣(⍺.iq>0)⊢∆tg                               ⍝   iq push
+        ∆tg←⍺.wkt×(1.380649e¯23÷g.A ⍺.dx)×T×1-2×?≠⍨tg ⋄ 0∊⍴e:∆tg                 ⍝   thermal noise
+        ∆tg←⍺{⍵+⍺.wci×(1-e.ci⍴⍨⍴o)×1-2×?≠⍨⍵}⍣(⍺.wci>0)⊢∆tg                       ⍝   ci noise
+        ⍺{⍵+⍺.wiq×⍺.G0×(⍴o)⍴1-(⊢÷⌈/)e.iq}⍣(⍺.wiq>0)⊢∆tg                          ⍝   iq push
     }
     WRT←⍺.out{~0∊⍴e:EWRT ⍵ ⋄ o t←⍵ ⋄ f⊣(⊂↓⍕o)⎕NPUT(f←⍺⍺,'_','.txt',⍨1↓0 4⍕t)1}   ⍝ write output
     EWRT←⍺.out{o t←⍵ ⋄ e.ea←e.g[,|o] ⋄ e EBSD.Write ⍺⍺,'_',1↓0 4⍕t}              ⍝ write ebsd file
